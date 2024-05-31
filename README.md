@@ -15,9 +15,13 @@ cmake -GNinja ..
 ninja
 ```
 
-... alternatively use the run.sh script which will do all of that for
-you, run the linter, and run the simulation:
+... alternatively use the bootstrap.sh to setup, and then run the run.sh script
+which will run the linter and simulation:
 
 ```
+# First boostrap it...
+./bootstrap.sh
+
+# Run as many times as you like
 ./run.sh
 ```
