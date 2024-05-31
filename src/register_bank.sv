@@ -1,3 +1,9 @@
+/*
+ * register_bank.sv
+ *
+ * Copyright 2024 Christian Wright <cjswright00@gmail.com>
+ */
+
 module register_bank(
   input rst_async, clk,
   input [3:0] read_a_index,
@@ -11,7 +17,7 @@ module register_bank(
   output [31:0] read_c
 );
   
-  reg [15:0] [31:0] registers;
+  reg [31:0] registers[15:0];
   
   assign read_a = registers[read_a_index];
   assign read_b = registers[read_b_index];

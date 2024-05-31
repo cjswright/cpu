@@ -1,53 +1,18 @@
 /*
- * wramp.sv - Skeleton top-level module for WRAMP
+ * wramp.sv
  *
- * Copyright 2015 by Dean Armstrong <dean.armstrong@virscient.com>
- *
- * This file is provided as a boilerplate for the top-level module that will
- * be developed as part of this assignment. The module developed should have
- * the same module header, but with the implementation fleshed out.
+ * Copyright 2024 Christian Wright <cjswright00@gmail.com>
  */
 
 `include "types.sv"
 
+module wramp(input clk, input rst_async,
 
-module wramp (
-  //
-  // Reset/clocking
-  //
+             output [19:0] mem_address,
+             input [31:0] mem_read_value,
+             output mem_write_en,
+             output [31:0] mem_write_value);
 
-  // Asynchronous active high reset
-  input         rst_async,
-
-  // System clock (sequential logic must be synchronous
-  // to rising edge)
-  input         clk,
-
-  //
-  // Memory interface
-  //
-
-  // This port outputs the address for the current memory
-  // operation.
-  output [19:0] mem_address,
-
-  // This port is used to return the value for a memory read
-  input [31:0]  mem_read_value,
-
-  // This output is asserted by the processor to instruct
-  // that a memory write occur. This enable signal is active
-  // high and should be asserted coincident with the memory
-  // write value being valid on data_write_value.
-  // Both outputs are synchronous to clk, so the memory write
-  // will occur when data_write_enable is 1 on the rising edge
-  // of clk
-  output       mem_write_enable,
-  // This port carries the memory write data. When
-  // data_write_enable is 1 this data must be valid. At other
-  // times the value driven on this output is not used
-  output [31:0] mem_write_value
-  );
-  
   wire [31:0] instruction;
   
   types::InstructionDetails details;
@@ -130,7 +95,7 @@ module wramp (
     .mem_write_value(mem_write_value),
     .mem_address(mem_access_address),
     .mem_access_active(mem_access_active),
-    .mem_write_enable(mem_write_enable),
+    .mem_write_enable(mem_write_en),
     
     .rd(read_c),
     .rd_index(read_c_index),

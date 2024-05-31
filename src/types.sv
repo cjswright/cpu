@@ -1,3 +1,9 @@
+/*
+ * types.sv
+ *
+ * Copyright 2024 Christian Wright <cjswright00@gmail.com>
+ */
+
 `ifndef TYPES_SV
 `define TYPES_SV
 
