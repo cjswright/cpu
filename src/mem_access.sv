@@ -29,13 +29,14 @@ module mem_access(input             rst_async, clk,
 
    assign mem_access_active = !disabled && (details.op == `OPC_LOAD || details.op == `OPC_STORE);
    assign mem_address = data[19:0];
-   assign mem_write_value = rd;
    assign mem_write_enable = !disabled && details.op == `OPC_STORE;
+
+   assign mem_write_value = details.store_reg_hazard == types::STORE_REG_RD ? result : rd;
 
    assign rd_index = details.rd;
 
    always_ff @(posedge clk or posedge rst_async) begin
-      $display("MEMACC (%d) v=%d data=%d op=%d offs=%d",
+      $display("MEMACC (%d) v=%d data=%x op=%x offs=%x",
                rst_async, details.is_valid, data, details.op, details.offs);
 
       out_details <= details;

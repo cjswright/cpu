@@ -45,7 +45,7 @@ module writeback(input         rst_async, clk,
    assign pc_offset = is_conditional;
 
    always_ff @(posedge clk or posedge rst_async) begin
-      $display("WRITEBK(%d) v=%d data=%d op=%d rd=%d offs=%d",
+      $display("WRITEBK(%d) v=%d data=%x op=%x rd=%x offs=%x",
                rst_async, details.is_valid, data, details.op, details.rd, details.offs);
    end
 

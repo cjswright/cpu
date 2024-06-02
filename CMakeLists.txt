@@ -17,7 +17,7 @@ list(APPEND rtl_sources
   src/writeback.sv)
 
 verilate(verilate
-  VERILATOR_ARGS -Wall --sv --timing --main -Wno-lint
+  VERILATOR_ARGS -Wall --sv --timing --main -Wno-lint --assert
   INCLUDE_DIRS "./src"
   SOURCES ${rtl_sources}
   TOP_MODULE testbench

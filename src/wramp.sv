@@ -76,6 +76,8 @@ module wramp(input clk, input rst_async,
              .read_a(read_a),
              .read_b(read_b),
 
+             .mem(mem_read_value),
+
              .out(alu_out),
              .out_details(alu_details));
 

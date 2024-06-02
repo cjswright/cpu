@@ -24,8 +24,8 @@ module register_bank(
   assign read_c = registers[read_c_index];
   
   always_ff @(posedge clk or posedge rst_async) begin
-    $display("REGS r1=%d r2=%d r3=%d r4=%d r5=%d",
-             registers[1], registers[2], registers[3], registers[4], registers[5]);
+    $display("REGS r1=%x r2=%x r3=%x r4=%x r5=%x r15=%x",
+             registers[1], registers[2], registers[3], registers[4], registers[5], registers[15]);
     if (rst_async)
       for (int i = 0; i < $size(registers); i++)
         registers[i] <= 0;

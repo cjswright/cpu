@@ -53,8 +53,10 @@ module testbench;
 
          if (mem_address == 20'hfffff && mem_write_value == 32'hdead) begin
             $display("Program completed successfully");
+            assert(mem[16'hff] == 32'h12345678);
             $finish;
             $dumpflush;
+
          end
       end
    end
