@@ -25,6 +25,8 @@ module i_fetch(input             rst_async, clk,
    reg [4:0]                     nop_counter;
 
    logic                         stall;
+   int                           fetch_count;
+
 
 
    assign stall = !(instruction[31:28] inside
@@ -34,6 +36,7 @@ module i_fetch(input             rst_async, clk,
 
    always_ff @(posedge clk or posedge rst_async) begin
       if (rst_async) begin
+         fetch_count <= 0;
          instruction <= 'hf000_0000;
          counter <= 0;
          nop_counter <= 0;
@@ -49,8 +52,9 @@ module i_fetch(input             rst_async, clk,
             if (stall) begin
                if (nop_counter == 4) begin
                   instruction <= mem_read_value;
+                  fetch_count <= fetch_count + 1;
                   if (!load_en)
-                    counter <= counter + 1;
+                     counter <= counter + 1;
                   nop_counter <= 0;
                end else begin
                   instruction <= 'hf000_0000;
@@ -60,6 +64,7 @@ module i_fetch(input             rst_async, clk,
                end
             end else begin
                counter <= counter + 1;
+               fetch_count <= fetch_count + 1;
                instruction <= mem_read_value;
             end
          end else begin
@@ -71,5 +76,8 @@ module i_fetch(input             rst_async, clk,
       $display("I_FETCH(%d) counter=%d fetch_en=%d load_en=%d stall=%d nop=%d",
                rst_async, counter, fetch_en, load_en, stall, nop_counter);
    end
-   
+
+   final
+     $display("Instructions executed %d", fetch_count);
+
 endmodule

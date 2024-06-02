@@ -26,15 +26,20 @@ module testbench;
 
    initial begin
       clk = 0;
-      clk_counter = 0;
       forever #5 begin
          clk = ~clk;
-         clk_counter ++;
 
          if (clk == 0)
            $display("---");
       end
    end // initial begin
+
+   always_ff @(posedge clk or posedge rst_async) begin
+      if (rst_async)
+        clk_counter <= 0;
+      else
+        clk_counter <= clk_counter + 1;
+   end
 
    final
      $display("CLKS %d", clk_counter);
