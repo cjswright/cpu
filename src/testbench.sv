@@ -21,15 +21,23 @@ module testbench;
    reg [31:0]               mem[0 : SIZE-1];
 
    assign mem_read_value = mem[mem_address[15:0]];
+   reg [31:0]               clk_counter;
+
 
    initial begin
       clk = 0;
+      clk_counter = 0;
       forever #5 begin
          clk = ~clk;
+         clk_counter ++;
+
          if (clk == 0)
            $display("---");
       end
-   end
+   end // initial begin
+
+   final
+     $display("CLKS %d", clk_counter);
 
    wramp _wramp(.clk(clk),
                 .rst_async(rst_async),
