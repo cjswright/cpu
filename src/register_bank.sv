@@ -13,7 +13,10 @@ module register_bank(input rst_async, clk,
                      input [31:0]  write,
                      output [31:0] read_a,
                      output [31:0] read_b,
-                     output [31:0] read_c
+                     output [31:0] read_c,
+
+                     input [3:0]   debug_index,
+                     output [31:0] debug
                      );
 
    reg [31:0]                      registers[15:0];
@@ -21,6 +24,8 @@ module register_bank(input rst_async, clk,
    assign read_a = registers[read_a_index];
    assign read_b = registers[read_b_index];
    assign read_c = registers[read_c_index];
+
+   assign debug = registers[debug_index];
 
    always_ff @(posedge clk or posedge rst_async) begin
       $display("REGS r1=%x r2=%x r3=%x r4=%x r5=%x r15=%x",

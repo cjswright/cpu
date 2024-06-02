@@ -11,7 +11,9 @@ module wramp(input clk, input rst_async,
              output [19:0] mem_address,
              input [31:0]  mem_read_value,
              output        mem_write_en,
-             output [31:0] mem_write_value);
+             output [31:0] mem_write_value,
+             input [3:0]   debug_reg_index,
+             output [31:0] debug_reg);
 
    wire [31:0]             instruction;
 
@@ -37,7 +39,10 @@ module wramp(input clk, input rst_async,
                                  .write(write),
                                  .read_a(read_a),
                                  .read_b(read_b),
-                                 .read_c(read_c));
+                                 .read_c(read_c),
+
+                                 .debug_index(debug_reg_index),
+                                 .debug(debug_reg));
 
    wire                    mem_access_active;
    wire [19:0]             fetch_address;
