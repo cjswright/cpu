@@ -36,8 +36,8 @@ module mem_access(input             rst_async, clk,
    assign rd_index = details.rd;
 
    always_ff @(posedge clk or posedge rst_async) begin
-      $display("MEMACC (%d) v=%d data=%x op=%x offs=%x",
-               rst_async, details.is_valid, data, details.op, details.offs);
+      $display("MEMACC (%d) v=%d data=%x op=%x offs=%x active=%d",
+               rst_async, details.is_valid, data, details.op, details.offs, mem_access_active);
 
       out_details <= details;
       result <= result_from_mem ? mem_read_value : data;

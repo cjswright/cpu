@@ -6,21 +6,34 @@
 
 `include "types.sv"
 
-module decoder (
-  input rst_async, clk,
-  input [31:0] instruction,
-  
-  output types::InstructionDetails details
-  );
+   module decoder (input        rst_async, clk,
+                   input [31:0] instruction,
+                   input        flush,
+
+                   output       types::InstructionDetails details,
+                   output       fetch_skip
+                   );
 
    reg [3:0] last_rd, last_rd2;
    reg [3:0] last_op, last_op2;
 
    var       op_reg_writeback;
-
-   assign op_reg_writeback = instruction[31:28] inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM, `OPC_LOAD};
+   int       valid_instr_count;
 
    types::InstructionDetails next_details;
+
+   assign op_reg_writeback = next_details.op inside `OPS_REG_WRITEBACK;
+
+   /* If the previous instruction modifies a register that we are about to jump
+    * to, we need to insert a noop so the ALU can calculate the new value of the
+    * register. */
+   always_comb begin
+      if (next_details.op inside { `OPC_JR, `OPC_JALR } &&
+          last_op inside `OPS_REG_WRITEBACK && last_rd == next_details.rs)
+        fetch_skip = 1;
+      else
+        fetch_skip = 0;
+   end
 
    always_comb begin
       next_details.op = instruction[31:28];
@@ -31,6 +44,9 @@ module decoder (
       next_details.offs = instruction[19:0];
       next_details.rt = instruction[3:0];
       next_details.is_valid = 1;
+
+      if (flush)
+        next_details.is_valid = 0;
 
       if (last_op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM} &&
           last_rd != 0 && next_details.rs == last_rd)
@@ -65,6 +81,10 @@ module decoder (
    end
 
    always_ff @(posedge clk or posedge rst_async) begin
+      if (rst_async) begin
+         valid_instr_count <= 0;
+      end
+
       if (!rst_async && op_reg_writeback) begin
          last_rd <= next_details.rd;
          last_op <= next_details.op;
@@ -78,6 +98,9 @@ module decoder (
 
       details <= next_details;
 
+      if (next_details.is_valid && !rst_async && next_details.op != `OPC_NOOP)
+        valid_instr_count <= valid_instr_count + 1;
+
       $display("DECODER(%d) %x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d %d",
                rst_async, instruction, next_details.is_valid, next_details.op,
                next_details.rd, next_details.rs, next_details.func, next_details.imm,
@@ -86,8 +109,10 @@ module decoder (
                next_details.rt_hazard,
                next_details.store_reg_hazard);
 
-
-      $display("HAZARD last_op=%x last_rd=%d", last_op, last_rd);
+      $display("HAZARD last_op=%x last_rd=%d fetch_skip=%d", last_op, last_rd, fetch_skip);
    end
+
+   final
+     $display("Instructions executed %d", valid_instr_count);
 
 endmodule

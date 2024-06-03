@@ -190,6 +190,15 @@ module testbench;
       assert(debug_reg == 1);
 
       $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
+      $display("Load hazard #2 OK");
 
       /* Test program taken from uni assignment */
       mem[0]  = 32'h1100000c; // addi $1, $0, 10
@@ -197,22 +206,21 @@ module testbench;
 
       // Loop over our input data
       mem[2]  = 32'h83100000; // lw $3, 0($1)
-      mem[3]  = 32'hf0000000; // noop
-      mem[4]  = 32'h02200003; // add $2, $2, $3
-      mem[5]  = 32'h11100001; // addi $1, $1, 1
-      mem[6]  = 32'h14120014; // subi $4, $1, 20
-      mem[7]  = 32'hb04ffffa; // bnez $4, -6
+      mem[3]  = 32'h02200003; // add $2, $2, $3
+      mem[4]  = 32'h11100001; // addi $1, $1, 1
+      mem[5]  = 32'h14120014; // subi $4, $1, 20
+      mem[6]  = 32'hb04ffffb; // bnez $4, -5
 
       // Store our result to address 0x000ff
-      mem[8]  = 32'h920000ff; // sw $2, 0xff($0)
+      mem[7]  = 32'h920000ff; // sw $2, 0xff($0)
 
       // Write 0xdead to address 0xfffff - the magic handshake with
       // the testbench (implemented above in the memory write stuff)
       // that will end the simulation.
-      mem[9]  = 32'h1f0ddead; // ori $15, $0, 0xdead
-      mem[10]  = 32'h9f0fffff; // sw $15, 0xfffff($0)
+      mem[8]  = 32'h1f0ddead; // ori $15, $0, 0xdead
+      mem[9]  = 32'h9f0fffff; // sw $15, 0xfffff($0)
 
-      mem[11] = 32'h4000000a; // j 0x10
+      mem[10] = 32'h4000000a; // j 0x10
 
       //
       // Provide some input data which our program above will operate on
@@ -231,7 +239,7 @@ module testbench;
       @(posedge clk);
       rst_async = 0;
 
-      #10000;
+      #1000;
       $display("Timed out");
       $finish;
    end

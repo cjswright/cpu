@@ -11,73 +11,98 @@ module i_fetch(input             rst_async, clk,
                output reg [31:0] instruction,
 
                input             fetch_en,
+
                output [19:0]     mem_address,
                input [31:0]      mem_read_value,
 
-               input             load_en,
-               input             load_offset,
-               input [19:0]      load_address);
-   
+               /* verilator lint_off UNOPTFLAT */
+               input             revert_pc,
+               /* verilator lint_on UNOPTFLAT */
+
+               output [3:0]      jump_reg_index,
+               input [19:0]      jump_reg);
+
+   /* Need to keep track of old PCs for reverting flow back in case of
+    * mis-predicts with jumps */
+   reg [19:0]                    prev_counter[0:1];
    reg [19:0]                    counter;
-   
-   assign mem_address = counter;
-   
-   reg [4:0]                     nop_counter;
 
-   logic                         stall;
-   int                           fetch_count;
+   /* We predict next based on an always-take predictor */
+   wire [3:0]                    opcode;
 
+   var [19:0]                    pred_counter;
 
+   assign opcode = instruction[31:28];
 
-   assign stall = !(instruction[31:28] inside
-                    {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM,
-                     `OPC_LOAD, `OPC_STORE, `OPC_NOOP})
-     | nop_counter > 0;
+   always_comb begin
+      /* Four possibilities:
+       * 1) Absolute jump
+       * 2) Relative jump
+       * 3) Jump to register
+       * 4) Increment
+       */
+
+      jump_reg_index = 0;
+
+      if (revert_pc) begin
+         pred_counter = prev_counter[1]+1;
+         mem_address = prev_counter[1]+1;
+      end else begin
+         case (opcode)
+           `OPC_JUMP, `OPC_JAL: begin
+              /* 1) Absolute jump */
+              pred_counter = instruction[19:0];
+              mem_address = pred_counter;
+           end
+           `OPC_BEQZ, `OPC_BNEZ: begin
+              /* 2) Relative jump */
+              pred_counter = counter + instruction[19:0];
+              mem_address = pred_counter;
+           end
+           `OPC_JR, `OPC_JALR: begin
+              /* 3) Jump to register */
+              jump_reg_index = instruction[23:20]; /* rs */
+              pred_counter = jump_reg;
+              mem_address = pred_counter;
+           end
+           default: begin
+              pred_counter = counter;
+              mem_address = counter;
+           end
+         endcase
+      end
+   end
+
+   var [19:0]                   next_counter;
+   always_comb begin
+      if (rst_async) begin
+         next_counter = 0;
+      end else begin
+         if (fetch_en)
+           next_counter = pred_counter + 1;
+         else
+           next_counter = pred_counter;
+      end
+   end
 
    always_ff @(posedge clk or posedge rst_async) begin
       if (rst_async) begin
-         fetch_count <= 0;
-         instruction <= 'hf000_0000;
          counter <= 0;
-         nop_counter <= 0;
+         instruction <= 'hf000_0000;
       end else begin
-         if (load_en)
-           if (load_offset) begin
-              counter <= counter + load_address;
-           end else begin
-              counter <= load_address;
-           end
-         
          if (fetch_en) begin
-            if (stall) begin
-               if (nop_counter == 4) begin
-                  instruction <= mem_read_value;
-                  fetch_count <= fetch_count + 1;
-                  if (!load_en)
-                     counter <= counter + 1;
-                  nop_counter <= 0;
-               end else begin
-                  instruction <= 'hf000_0000;
-                  if (!load_en)
-                    counter <= counter;
-                  nop_counter <= nop_counter + 1;
-               end
-            end else begin
-               counter <= counter + 1;
-               fetch_count <= fetch_count + 1;
-               instruction <= mem_read_value;
-            end
+            instruction <= mem_read_value;
          end else begin
             instruction <= 'hf000_0000;
-            if (!load_en)
-              counter <= counter;
          end
       end
-      $display("I_FETCH(%d) counter=%d fetch_en=%d load_en=%d stall=%d nop=%d",
-               rst_async, counter, fetch_en, load_en, stall, nop_counter);
-   end
 
-   final
-     $display("Instructions executed %d", fetch_count);
+      prev_counter[1] <= prev_counter[0];
+      prev_counter[0] <= counter;
+      counter <= next_counter;
+
+      $display("I_FETCH(%d) p_c=%d n_c=%d c=%d f_en=%d r_pc=%d prev_pc=%d",
+               rst_async, pred_counter, next_counter, counter, fetch_en, revert_pc, prev_counter[1]);
+   end
 
 endmodule

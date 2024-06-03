@@ -18,11 +18,13 @@ module alu (input         rst_async, clk,
             input [31:0]      mem,
 
             output reg [31:0] out,
+            output            is_set,
             output            types::InstructionDetails out_details
             );
    
    assign read_a_index = details.rs;
    assign read_b_index = details.rt;
+   assign is_set = next_out[0];
 
    let is_imm = details.op[0];
 
@@ -31,7 +33,12 @@ module alu (input         rst_async, clk,
    reg [31:0]                   out2;
    reg [31:0]                   mem2;
 
+   logic [31:0]                 next_out;
+   types::InstructionDetails next_out_details;
+
    always_comb begin
+      next_out_details = details;
+
       if (details.rs_hazard == types::ALU_REG_PREV)
         opa = out;
       else if (details.rs_hazard == types::ALU_REG_PREV2)
@@ -56,47 +63,48 @@ module alu (input         rst_async, clk,
           opb = mem2;
         else
           opb = read_b;
-   end
-
-   always_ff @(posedge clk or posedge rst_async) begin
-      $display("ALU    (%d) o=%x f=%x i=%x rs=%x rt=%x", rst_async, details.op, details.func, details.imm, details.rs, details.rt);
-      $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a, read_b, opa, opb);
-
-      out_details <= details;
-      out2 <= out;
-      mem2 <= mem;
 
       if (details.op inside {`OPC_ARITH, `OPC_AR_IM}) begin
          // For reference, but it only matters for mult and divide
          //logic is_unsigned = details.func[0];
          casez (details.func)
-           `FUNC_ADD: out <= opa + opb;
-           `FUNC_SUB: out <= opa - opb;
+           `FUNC_ADD: next_out = opa + opb;
+           `FUNC_SUB: next_out = opa - opb;
 
            /* Not unsigned/signed */
-           `FUNC_SLL: out <= opa << opb;
-           `FUNC_AND: out <= opa & opb;
-           `FUNC_SRL: out <= opa >> opb;
-           `FUNC_OR : out <= opa | opb;
-           `FUNC_SRA: out <= opa >>> opb;
-           `FUNC_XOR: out <= opa ^ opb;
-           default: out_details.is_valid <= 0;
+           `FUNC_SLL: next_out = opa << opb;
+           `FUNC_AND: next_out = opa & opb;
+           `FUNC_SRL: next_out = opa >> opb;
+           `FUNC_OR : next_out = opa | opb;
+           `FUNC_SRA: next_out = opa >>> opb;
+           `FUNC_XOR: next_out = opa ^ opb;
+           default: next_out_details.is_valid = 0;
          endcase
       end else if (details.op inside {`OPC_TEST, `OPC_TS_IM}) begin
          casez (details.func)
-           default: out_details.is_valid <= 0;
+           default: next_out_details.is_valid = 0;
          endcase
       end else if (details.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP}) begin
-         out <= opa + {11'b0, details.offs};
+         next_out = opa + {11'b0, details.offs};
       end else if (details.op == `OPC_BNEZ) begin
-         out <= 0;
-         out[0] <= opa != 0;
+         next_out = 0;
+         next_out[0] = opa != 0;
       end else if (details.op == `OPC_BEQZ) begin
-         out <= 0;
-         out[0] <= opa == 0;
+         next_out = 0;
+         next_out[0] = opa == 0;
       end else begin
-         out_details.is_valid <= 0;
+         next_out_details.is_valid = 0;
       end
+   end
+
+   always_ff @(posedge clk or posedge rst_async) begin
+      $display("ALU    (%d) v=%d o=%x f=%x i=%x rs=%x rt=%x", rst_async, details.is_valid, details.op, details.func, details.imm, details.rs, details.rt);
+      $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a, read_b, opa, opb);
+
+      out_details <= next_out_details;
+      out <= next_out;
+      out2 <= out;
+      mem2 <= mem;
    end
    
 endmodule

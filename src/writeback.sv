@@ -12,11 +12,7 @@ module writeback(input         rst_async, clk,
 
                  output        write_en,
                  output [31:0] write,
-                 output [3:0]  write_index,
-
-                 output        write_pc_en,
-                 output        pc_offset,
-                 output [19:0] pc
+                 output [3:0]  write_index
                  );
 
    /* All of the outputs of this module are fed into the register bank
@@ -39,10 +35,6 @@ module writeback(input         rst_async, clk,
    assign write_index = details.rd;
    assign write_en = !disabled && op_req_writeback && !write_pc;
    assign write = data;
-
-   assign write_pc_en = !disabled && op_req_writeback && write_pc && (!is_conditional || data[0]);
-   assign pc = is_conditional ? details.offs : data[19:0];
-   assign pc_offset = is_conditional;
 
    always_ff @(posedge clk or posedge rst_async) begin
       $display("WRITEBK(%d) v=%d data=%x op=%x rd=%x offs=%x",

@@ -52,6 +52,8 @@ endpackage
 /* Not actually part of the spec, but useful! */
 `define OPC_NOOP  'b1111
 
+`define OPS_REG_WRITEBACK {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM, `OPC_LOAD}
+
 /* Math has signed and unsigned variants with low bit. 1 indicates unsigned */
 `define FUNC_ADD 'b000?
 `define FUNC_SUB 'b001?
