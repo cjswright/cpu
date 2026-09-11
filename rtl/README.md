@@ -9,10 +9,7 @@ Very WIP!
 Use CMake to build in the usual way:
 
 ```
-mkdir build
-cd build
-cmake -GNinja ..
-ninja
+cmake -B build -GNinja --build
 ```
 
 ... alternatively use the bootstrap.sh to setup, and then run the run.sh script
