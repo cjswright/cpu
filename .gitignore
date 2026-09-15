@@ -2,3 +2,5 @@ build
 *~
 waveform.vcd
 .emacs
+*.o
+*.srec
