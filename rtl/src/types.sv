@@ -9,8 +9,7 @@
 
 package types;
    typedef enum { TYPE_R, TYPE_I, TYPE_J } Type;
-   typedef enum { ALU_REG_NORMAL, ALU_REG_PREV, ALU_REG_PREV2, ALU_REG_MEM, ALU_REG_MEM2 } AluRegHazard;
-   typedef enum { STORE_REG_NORMAL, STORE_REG_RD } StoreRegHazard;
+   typedef enum { ALU_REG_NORMAL, ALU_REG_PREV, ALU_REG_MEM } AluRegHazard;
 
    typedef struct {
       logic [3:0] op;
@@ -30,8 +29,6 @@ package types;
        * of the next instruction in the ALU */
       AluRegHazard rs_hazard;
       AluRegHazard rt_hazard;
-
-      StoreRegHazard store_reg_hazard;
    } InstructionDetails;
 endpackage
 

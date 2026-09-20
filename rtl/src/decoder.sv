@@ -14,8 +14,8 @@
                    output       fetch_skip
                    );
 
-   reg [3:0] last_rd, last_rd2;
-   reg [3:0] last_op, last_op2;
+   reg [3:0] last_rd;
+   reg [3:0] last_op;
 
    var       op_reg_writeback;
    int       valid_instr_count;
@@ -51,34 +51,19 @@
       if (last_op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM} &&
           last_rd != 0 && next_details.rs == last_rd)
         next_details.rs_hazard = types::ALU_REG_PREV;
-      else if (last_op2 inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM} &&
-          last_rd2 != 0 && next_details.rs == last_rd2)
-        next_details.rs_hazard = types::ALU_REG_PREV2;
       else if (last_op == `OPC_LOAD && last_rd == next_details.rs)
         next_details.rs_hazard = types::ALU_REG_MEM;
-      else if (last_op2 == `OPC_LOAD && last_rd2 == next_details.rs)
-        next_details.rt_hazard = types::ALU_REG_MEM2;
       else
         next_details.rs_hazard = types::ALU_REG_NORMAL;
 
       if (last_op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM} &&
           last_rd != 0 && next_details.rt == last_rd)
         next_details.rt_hazard = types::ALU_REG_PREV;
-      else if (last_op2 inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM} &&
-          last_rd2 != 0 && next_details.rt == last_rd2)
-        next_details.rt_hazard = types::ALU_REG_PREV2;
       else if (last_op == `OPC_LOAD && last_rd == next_details.rt)
         next_details.rt_hazard = types::ALU_REG_MEM;
-      else if (last_op2 == `OPC_LOAD && last_rd2 == next_details.rt)
-        next_details.rt_hazard = types::ALU_REG_MEM2;
       else
         next_details.rt_hazard = types::ALU_REG_NORMAL;
-
-      if (last_rd == next_details.rd)
-        next_details.store_reg_hazard = types::STORE_REG_RD;
-      else
-        next_details.store_reg_hazard = types::STORE_REG_NORMAL;
-   end
+   end // always_comb
 
    always_ff @(posedge clk or posedge rst_async) begin
       if (rst_async) begin
@@ -93,21 +78,17 @@
          last_op <= 4'hf;
       end
 
-      last_rd2 <= last_rd;
-      last_op2 <= last_op;
-
       details <= next_details;
 
       if (next_details.is_valid && !rst_async && next_details.op != `OPC_NOOP)
         valid_instr_count <= valid_instr_count + 1;
 
-      $display("DECODER(%d) %x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d %d",
+      $display("DECODER(%d) %x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d",
                rst_async, instruction, next_details.is_valid, next_details.op,
                next_details.rd, next_details.rs, next_details.func, next_details.imm,
                next_details.offs, next_details.rt,
                next_details.rs_hazard,
-               next_details.rt_hazard,
-               next_details.store_reg_hazard);
+               next_details.rt_hazard);
 
       $display("HAZARD last_op=%x last_rd=%d fetch_skip=%d", last_op, last_rd, fetch_skip);
    end

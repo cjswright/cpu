@@ -22,11 +22,12 @@ module register_bank(input rst_async, clk,
                      );
 
    reg [31:0]                      registers[15:0];
+   wire                            wr_live = write_en && write_index != 0;
 
-   assign read_a = registers[read_a_index];
-   assign read_b = registers[read_b_index];
-   assign read_c = registers[read_c_index];
-   assign jump = registers[jump_index][19:0];
+   assign read_a = (wr_live && write_index == read_a_index) ? write : registers[read_a_index];
+   assign read_b = (wr_live && write_index == read_b_index) ? write : registers[read_b_index];
+   assign read_c = (wr_live && write_index == read_c_index) ? write : registers[read_c_index];
+   assign jump = (wr_live && write_index == jump_index) ? write[19:0] : registers[jump_index][19:0];
 
    assign debug = registers[debug_index];
 

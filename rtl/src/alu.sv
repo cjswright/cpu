@@ -30,8 +30,6 @@ module alu (input         rst_async, clk,
 
    logic [31:0]                 opa;
    logic [31:0]                 opb;
-   reg [31:0]                   out2;
-   reg [31:0]                   mem2;
 
    logic [31:0]                 next_out;
    types::InstructionDetails next_out_details;
@@ -41,12 +39,8 @@ module alu (input         rst_async, clk,
 
       if (details.rs_hazard == types::ALU_REG_PREV)
         opa = out;
-      else if (details.rs_hazard == types::ALU_REG_PREV2)
-        opa = out2;
       else if (details.rs_hazard == types::ALU_REG_MEM)
         opa = mem;
-      else if (details.rs_hazard == types::ALU_REG_MEM2)
-        opa = mem2;
       else
         opa = read_a;
 
@@ -55,12 +49,8 @@ module alu (input         rst_async, clk,
       else
         if (details.rt_hazard == types::ALU_REG_PREV)
           opb = out;
-        else if (details.rt_hazard == types::ALU_REG_PREV2)
-          opb = out2;
         else if (details.rt_hazard == types::ALU_REG_MEM)
           opb = mem;
-        else if (details.rt_hazard == types::ALU_REG_MEM2)
-          opb = mem2;
         else
           opb = read_b;
 
@@ -103,8 +93,6 @@ module alu (input         rst_async, clk,
 
       out_details <= next_out_details;
       out <= next_out;
-      out2 <= out;
-      mem2 <= mem;
    end
    
 endmodule
