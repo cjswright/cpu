@@ -11,12 +11,14 @@ module register_bank (
   input  [ 3:0] read_a_index_i,
   input  [ 3:0] read_b_index_i,
   input  [ 3:0] read_c_index_i,
+  input  [ 3:0] read_jump_index_i,
   input  [ 3:0] write_index_i,
   input         write_en_i,
   input  [31:0] write_i,
   output [31:0] read_a_o,
   output [31:0] read_b_o,
   output [31:0] read_c_o,
+  output [19:0] read_jump_o,
 
   input  [ 3:0] debug_index_i,
   output [31:0] debug_o
@@ -32,6 +34,8 @@ module register_bank (
            (wr_live && write_index_i == read_b_index_i) ? write_i : registers[read_b_index_i];
   assign read_c_o =
            (wr_live && write_index_i == read_c_index_i) ? write_i : registers[read_c_index_i];
+  assign read_jump_o = (wr_live && write_index_i == read_jump_index_i)
+    ? write_i[19:0] : registers[read_jump_index_i][19:0];
 
   assign debug_o = registers[debug_index_i];
 

@@ -8,12 +8,12 @@
 `define TYPES_SV
 
 package types;
-  typedef enum {
+  typedef enum logic [1:0] {
     TYPE_R,
     TYPE_I,
     TYPE_J
   } type_e;
-  typedef enum {
+  typedef enum logic [1:0] {
     ALU_REG_NORMAL,
     ALU_REG_PREV,
     ALU_REG_MEM
@@ -21,6 +21,19 @@ package types;
 
   typedef struct {
     logic [19:0] address;
+
+    logic is_alu;
+    logic is_mem;
+    logic is_mem_store;
+    logic is_mem_load;
+    logic modifies_reg_rd;
+    logic is_conditional_branch;
+    logic is_jump;
+    logic is_jump_link;
+    logic is_jump_register;
+
+    logic [19:0] branch_target;
+
     logic [3:0]  op;
     logic [3:0]  rd;
     logic [3:0]  rs;
@@ -57,8 +70,6 @@ endpackage
 
 /* Not actually part of the spec, but useful! */
 `define OPC_NOOP 'b1111
-
-`define OPS_REG_WRITEBACK `OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM, `OPC_LOAD
 
 /* Math has signed and unsigned variants with low bit. 1 indicates unsigned */
 `define FUNC_ADD 'b000?
