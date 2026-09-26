@@ -14,14 +14,13 @@ module i_fetch (
 
     output wire        out_fetch_en,
     output reg  [31:0] out_instruction,
+    output      [19:0] out_address,
     output             valid,
 
     output wire [19:0] req_mem_address,
 
     input        fetch_valid,
-    /* verilator lint_off UNUSED */
     input [19:0] fetch_address,
-    /* verilator lint_on UNUSED */
     input [31:0] fetch_value
 );
 
@@ -40,6 +39,8 @@ module i_fetch (
 
   assign req_mem_address = counter;
   assign out_fetch_en = !stalled;
+
+  assign out_address = fetch_address;
 
   always_ff @(posedge clk or posedge rst_async) begin
     if (rst_async) counter <= 0;

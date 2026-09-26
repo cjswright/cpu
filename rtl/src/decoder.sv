@@ -10,6 +10,7 @@ module decoder (
     input        rst_async,
     clk,
     input [31:0] instruction,
+    input [19:0] address,
     input        instruction_valid,
     input        flush,
 
@@ -38,6 +39,7 @@ module decoder (
   end
 
   always_comb begin
+    next_details.address = address;
     next_details.op = instruction[31:28];
     next_details.rd = instruction[27:24];
     next_details.rs = instruction[23:20];

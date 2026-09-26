@@ -20,6 +20,7 @@ package types;
   } AluRegHazard;
 
   typedef struct {
+    logic [19:0] address;
     logic [3:0]  op;
     logic [3:0]  rd;
     logic [3:0]  rs;

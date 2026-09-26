@@ -33,6 +33,7 @@ module wramp (
 );
 
   wire                      [31:0] instruction;
+  wire                      [19:0] i_address;
 
   types::InstructionDetails        details;
 
@@ -76,6 +77,7 @@ module wramp (
       .stalled(ifetch_stalled),
       .out_fetch_en(ifetch_req_en),
       .out_instruction(instruction),
+      .out_address(i_address),
       .valid(ifetch_valid),
       .req_mem_address(ifetch_req_address),
       .fetch_valid(ifetch_is_valid),
@@ -91,6 +93,7 @@ module wramp (
       .rst_async(rst_async),
       .clk(clk),
       .instruction(instruction),
+      .address(i_address),
       .instruction_valid(ifetch_valid),
       .flush(!alu_is_set && details.op inside {`OPC_BEQZ, `OPC_BNEZ}),
       .details(details),
