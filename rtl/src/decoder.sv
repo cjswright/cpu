@@ -7,15 +7,15 @@
 `include "types.sv"
 
 module decoder (
-    input        rst_async,
-    clk,
-    input [31:0] instruction,
-    input [19:0] address,
-    input        instruction_valid,
-    input        flush,
+  input        rst_async,
+  clk,
+  input [31:0] instruction,
+  input [19:0] address,
+  input        instruction_valid,
+  input        flush,
 
-    output types::InstructionDetails details,
-    output                           fetch_skip
+  output types::InstructionDetails details,
+  output                           fetch_skip
 );
 
   reg                       [3:0] last_rd;

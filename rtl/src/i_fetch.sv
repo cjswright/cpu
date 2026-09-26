@@ -7,21 +7,21 @@
 `include "types.sv"
 
 module i_fetch (
-    input rst_async,
-    clk,
+  input rst_async,
+  clk,
 
-    input stalled,
+  input stalled,
 
-    output wire        out_fetch_en,
-    output reg  [31:0] out_instruction,
-    output      [19:0] out_address,
-    output             valid,
+  output wire        out_fetch_en,
+  output reg  [31:0] out_instruction,
+  output      [19:0] out_address,
+  output             valid,
 
-    output wire [19:0] req_mem_address,
+  output wire [19:0] req_mem_address,
 
-    input        fetch_valid,
-    input [19:0] fetch_address,
-    input [31:0] fetch_value
+  input        fetch_valid,
+  input [19:0] fetch_address,
+  input [31:0] fetch_value
 );
 
   reg   [19:0] counter;

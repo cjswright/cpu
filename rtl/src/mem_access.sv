@@ -8,22 +8,22 @@
 
 
 module mem_access (
-    input                                  rst_async,
-    clk,
-    input types::InstructionDetails        details,
-    input                           [31:0] data,
+  input                                  rst_async,
+  clk,
+  input types::InstructionDetails        details,
+  input                           [31:0] data,
 
-    input  [31:0] mem_read_value,
-    output [31:0] mem_write_value,
-    output [19:0] mem_address,
-    output        mem_read_en,
-    output        mem_write_en,
+  input  [31:0] mem_read_value,
+  output [31:0] mem_write_value,
+  output [19:0] mem_address,
+  output        mem_read_en,
+  output        mem_write_en,
 
-    input  [31:0] rd,
-    output [ 3:0] rd_index,
+  input  [31:0] rd,
+  output [ 3:0] rd_index,
 
-    output types::InstructionDetails        out_details,
-    output wire                      [31:0] result
+  output types::InstructionDetails        out_details,
+  output wire                      [31:0] result
 );
 
   let disabled = rst_async || !details.is_valid;

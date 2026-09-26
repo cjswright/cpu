@@ -5,20 +5,20 @@
  */
 
 module register_bank (
-    input         rst_async,
-    clk,
-    input  [ 3:0] read_a_index,
-    input  [ 3:0] read_b_index,
-    input  [ 3:0] read_c_index,
-    input  [ 3:0] write_index,
-    input         write_en,
-    input  [31:0] write,
-    output [31:0] read_a,
-    output [31:0] read_b,
-    output [31:0] read_c,
+  input         rst_async,
+  clk,
+  input  [ 3:0] read_a_index,
+  input  [ 3:0] read_b_index,
+  input  [ 3:0] read_c_index,
+  input  [ 3:0] write_index,
+  input         write_en,
+  input  [31:0] write,
+  output [31:0] read_a,
+  output [31:0] read_b,
+  output [31:0] read_c,
 
-    input  [ 3:0] debug_index,
-    output [31:0] debug
+  input  [ 3:0] debug_index,
+  output [31:0] debug
 );
 
   reg  [31:0] registers                              [15:0];

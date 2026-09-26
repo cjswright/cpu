@@ -7,21 +7,21 @@
 `include "types.sv"
 
 module alu (
-    input rst_async,
-    clk,
+  input rst_async,
+  clk,
 
-    input types::InstructionDetails details,
+  input types::InstructionDetails details,
 
-    output [ 3:0] read_a_index,
-    output [ 3:0] read_b_index,
-    input  [31:0] read_a,
-    input  [31:0] read_b,
+  output [ 3:0] read_a_index,
+  output [ 3:0] read_b_index,
+  input  [31:0] read_a,
+  input  [31:0] read_b,
 
-    input [31:0] mem,
+  input [31:0] mem,
 
-    output reg                       [31:0] out,
-    output                                  is_set,
-    output types::InstructionDetails        out_details
+  output reg                       [31:0] out,
+  output                                  is_set,
+  output types::InstructionDetails        out_details
 );
 
   assign read_a_index = details.rs;

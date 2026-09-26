@@ -99,23 +99,23 @@ module testbench;
   final $display("CLKS %d", clk_counter);
 
   wramp _wramp (
-      .clk(clk),
-      .rst_async(rst_async),
+    .clk(clk),
+    .rst_async(rst_async),
 
-      .ifetch_req_en(ifetch_req_en),
-      .ifetch_req_address(ifetch_req_address),
-      .ifetch_is_valid(ifetch_is_valid),
-      .ifetch_address(ifetch_address),
-      .ifetch_data(ifetch_data),
+    .ifetch_req_en(ifetch_req_en),
+    .ifetch_req_address(ifetch_req_address),
+    .ifetch_is_valid(ifetch_is_valid),
+    .ifetch_address(ifetch_address),
+    .ifetch_data(ifetch_data),
 
-      .mem_address(mem_address),
-      .mem_fetch_valid(mem_read_is_valid),
-      .mem_fetch_value(mem_read_value),
-      .mem_read_en(mem_read_en),
-      .mem_write_en(mem_write_en),
-      .mem_write_value(mem_write_value),
-      .debug_reg_index(debug_reg_index),
-      .debug_reg(debug_reg)
+    .mem_address(mem_address),
+    .mem_fetch_valid(mem_read_is_valid),
+    .mem_fetch_value(mem_read_value),
+    .mem_read_en(mem_read_en),
+    .mem_write_en(mem_write_en),
+    .mem_write_value(mem_write_value),
+    .debug_reg_index(debug_reg_index),
+    .debug_reg(debug_reg)
   );
 
   always_ff @(posedge clk) begin
@@ -166,7 +166,7 @@ module testbench;
 
     lineno = 0;
     while ($fgets(
-        line, fd
+      line, fd
     ) != 0) begin
       lineno++;
       pos = 0;
@@ -204,7 +204,7 @@ module testbench;
       if (rectype == 1 || rectype == 2 || rectype == 3) begin
         if (data_bytes % 4 != 0)
           $fatal(
-              1, "%s:%0d: %0d data bytes is not a whole number of words", path, lineno, data_bytes
+            1, "%s:%0d: %0d data bytes is not a whole number of words", path, lineno, data_bytes
           );
 
         nwords = data_bytes / 4;
@@ -240,7 +240,7 @@ module testbench;
       if (rectype == 7 || rectype == 8 || rectype == 9)
         if (addr != 0)
           $fatal(
-              1, "%s:%0d: entry point %0h is not 0, but the CPU resets to PC 0", path, lineno, addr
+            1, "%s:%0d: entry point %0h is not 0, but the CPU resets to PC 0", path, lineno, addr
           );
     end
 
@@ -266,7 +266,7 @@ module testbench;
 
     lineno = 0;
     while ($fgets(
-        line, fd
+      line, fd
     ) != 0) begin
       lineno++;
       pos = 0;

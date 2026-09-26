@@ -7,14 +7,14 @@
 `include "types.sv"
 
 module writeback (
-    input                                  rst_async,
-    clk,
-    input types::InstructionDetails        details,
-    input                           [31:0] data,
+  input                                  rst_async,
+  clk,
+  input types::InstructionDetails        details,
+  input                           [31:0] data,
 
-    output        write_en,
-    output [31:0] write,
-    output [ 3:0] write_index
+  output        write_en,
+  output [31:0] write,
+  output [ 3:0] write_index
 );
 
   /* All of the outputs of this module are fed into the register bank
