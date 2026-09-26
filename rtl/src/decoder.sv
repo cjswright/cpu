@@ -30,14 +30,14 @@ module decoder (
 
   assign details_o = details_q;
 
-  assign op_reg_writeback = details_d.op inside `OPS_REG_WRITEBACK;
+  assign op_reg_writeback = details_d.op inside {`OPS_REG_WRITEBACK};
 
   /* If the previous instruction modifies a register that we are about to jump
     * to, we need to insert a noop so the ALU can calculate the new value of the
     * register. */
   always_comb begin
     if (details_d.op inside { `OPC_JR, `OPC_JALR } &&
-          last_op_q inside `OPS_REG_WRITEBACK && last_rd_q == details_d.rs)
+          last_op_q inside { `OPS_REG_WRITEBACK } && last_rd_q == details_d.rs)
       stall_o = 1;
     else stall_o = 0;
   end
