@@ -4,6 +4,7 @@
 
 ((verilog-mode
   . ((verilog-ts-indent-level . 2)
+     (lsp-clients-svlangserver-formatCommand . "verible-verilog-format --wrap_spaces=2")
      (lsp-clients-svlangserver-includeIndexing . ["**/*.{sv,svh}"])
      (lsp-clients-svlangserver-mustIncludeIndexing . ["**/*.{sv,svh}"])
      (lsp-clients-svlangserver-excludeIndexing . ["**/build/**/*.{sv,svh}"])
