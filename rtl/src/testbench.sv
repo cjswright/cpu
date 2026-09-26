@@ -15,9 +15,18 @@ module testbench;
   reg          clk;
   reg          rst_async;
 
+  wire         ifetch_req_en;
+  wire  [19:0] ifetch_req_address;
+
+  reg          ifetch_is_valid;
+  reg   [19:0] ifetch_address;
+  reg   [31:0] ifetch_data;
+
   wire  [19:0] mem_address;
   wire         mem_write_en;
-  wire  [31:0] mem_read_value;
+  wire         mem_read_en;
+  reg   [31:0] mem_read_value;
+  reg          mem_read_is_valid;
   wire  [31:0] mem_write_value;
 
   logic [ 3:0] debug_reg_index;
@@ -25,9 +34,7 @@ module testbench;
 
   parameter SIZE = 65536;
 
-  reg [31:0] mem[0 : SIZE-1];
-
-  assign mem_read_value = mem[mem_address[15:0]];
+  reg [31:0] mem         [0 : SIZE-1];
   reg [31:0] clk_counter;
 
   /* Address the program writes to to hand control back to the testbench,
@@ -62,6 +69,25 @@ module testbench;
     end
   end  // initial begin
 
+  always_ff @(posedge clk) begin
+    if (mem_read_en) begin
+      mem_read_value <= mem[mem_address[15:0]];
+      mem_read_is_valid <= '1;
+    end else begin
+      mem_read_is_valid <= '0;
+    end
+  end
+
+  always_ff @(posedge clk) begin
+    if (ifetch_req_en) begin
+      ifetch_address <= ifetch_req_address;
+      ifetch_data <= mem[ifetch_req_address[15:0]];
+      ifetch_is_valid <= '1;
+    end else begin
+      ifetch_is_valid <= '0;
+    end
+  end
+
   always_ff @(posedge clk or posedge rst_async) begin
     if (rst_async) clk_counter <= 0;
     else begin
@@ -75,8 +101,17 @@ module testbench;
   wramp _wramp (
       .clk(clk),
       .rst_async(rst_async),
+
+      .ifetch_req_en(ifetch_req_en),
+      .ifetch_req_address(ifetch_req_address),
+      .ifetch_is_valid(ifetch_is_valid),
+      .ifetch_address(ifetch_address),
+      .ifetch_data(ifetch_data),
+
       .mem_address(mem_address),
-      .mem_read_value(mem_read_value),
+      .mem_fetch_valid(mem_read_is_valid),
+      .mem_fetch_value(mem_read_value),
+      .mem_read_en(mem_read_en),
       .mem_write_en(mem_write_en),
       .mem_write_value(mem_write_value),
       .debug_reg_index(debug_reg_index),

@@ -10,14 +10,12 @@ module register_bank (
     input  [ 3:0] read_a_index,
     input  [ 3:0] read_b_index,
     input  [ 3:0] read_c_index,
-    input  [ 3:0] jump_index,
     input  [ 3:0] write_index,
     input         write_en,
     input  [31:0] write,
     output [31:0] read_a,
     output [31:0] read_b,
     output [31:0] read_c,
-    output [19:0] jump,
 
     input  [ 3:0] debug_index,
     output [31:0] debug
@@ -29,9 +27,8 @@ module register_bank (
   assign read_a = (wr_live && write_index == read_a_index) ? write : registers[read_a_index];
   assign read_b = (wr_live && write_index == read_b_index) ? write : registers[read_b_index];
   assign read_c = (wr_live && write_index == read_c_index) ? write : registers[read_c_index];
-  assign jump = (wr_live && write_index == jump_index) ? write[19:0] : registers[jump_index][19:0];
 
-  assign debug = registers[debug_index];
+  assign debug  = registers[debug_index];
 
   always_ff @(posedge clk or posedge rst_async) begin
     $display("REGS r1=%x r2=%x r3=%x r4=%x r5=%x r15=%x", registers[1], registers[2], registers[3],

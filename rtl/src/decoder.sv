@@ -10,6 +10,7 @@ module decoder (
     input        rst_async,
     clk,
     input [31:0] instruction,
+    input        instruction_valid,
     input        flush,
 
     output types::InstructionDetails details,
@@ -44,7 +45,7 @@ module decoder (
     next_details.imm = instruction[15:0];
     next_details.offs = instruction[19:0];
     next_details.rt = instruction[3:0];
-    next_details.is_valid = 1;
+    next_details.is_valid = instruction_valid;
 
     if (flush) next_details.is_valid = 0;
 
