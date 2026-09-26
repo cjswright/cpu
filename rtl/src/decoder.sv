@@ -12,6 +12,8 @@ module decoder (
 
   input [31:0] instruction_i,
   input [19:0] address_i,
+  input        branch_predicted_i,
+  input [19:0] branch_dest_i,
   input        valid_i,
   input        flush_i,
 
@@ -36,6 +38,9 @@ module decoder (
   always_comb begin
     decoded.instruction = instruction_i;
     decoded.address = address_i;
+    decoded.branch_predicted = branch_predicted_i;
+    decoded.branch_dest = branch_dest_i;
+
     decoded.op = instruction_i[31:28];
     decoded.rd = instruction_i[27:24];
     decoded.rs = instruction_i[23:20];
@@ -102,9 +107,10 @@ module decoder (
     if (details_d.is_valid && !rst_async_i && details_d.op != `OPC_NOOP)
       valid_instr_count_q <= valid_instr_count_q + 1;
 
-    $display("DECODER(%08x) v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d", instruction_i,
-             details_d.is_valid, details_d.op, details_d.rd, details_d.rs, details_d.func,
-             details_d.imm, details_d.offs, details_d.rt, details_d.rs_hazard, details_d.rt_hazard);
+    $display("DECODER(%08x) a=%x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d",
+             instruction_i, address_i, details_d.is_valid, details_d.op, details_d.rd,
+             details_d.rs, details_d.func, details_d.imm, details_d.offs, details_d.rt,
+             details_d.rs_hazard, details_d.rt_hazard);
 
     $display("HAZARD stall_o=%d", stall_o);
   end

@@ -74,8 +74,11 @@ module wramp (
   wire ifetch_valid;
   wire ifetch_stalled;
 
-  wire alu_jump_en;
-  wire [19:0] alu_jump_destination;
+  wire ibranch_predicted;
+  wire [19:0] ibranch_dest;
+
+  wire alu_branch_en;
+  wire [19:0] alu_branch_destination;
 
   wire decoder_jump_en;
   wire [19:0] decoder_jump_destination;
@@ -96,12 +99,15 @@ module wramp (
     .decoder_jump_en_i  (decoder_jump_en),
     .decoder_jump_dest_i(decoder_jump_destination),
 
-    .alu_jump_en_i  (alu_jump_en),
-    .alu_jump_dest_i(alu_jump_destination),
+    .alu_branch_en_i  (alu_branch_en),
+    .alu_branch_dest_i(alu_branch_destination),
 
     .valid_o(ifetch_valid),
     .instruction_o(instruction),
-    .address_o(i_address)
+    .address_o(i_address),
+
+    .branch_predicted_o(ibranch_predicted),
+    .branch_dest_o(ibranch_dest)
   );
 
   wire decoder_req_skip;
@@ -114,8 +120,10 @@ module wramp (
 
     .instruction_i(instruction),
     .address_i(i_address),
+    .branch_predicted_i(ibranch_predicted),
+    .branch_dest_i(ibranch_dest),
     .valid_i(ifetch_valid),
-    .flush_i(alu_jump_en),
+    .flush_i(alu_branch_en),
 
     .jump_active_o(decoder_jump_en),
     .jump_destination_o(decoder_jump_destination),
@@ -140,8 +148,8 @@ module wramp (
     .read_a_i(read_a),
     .read_b_i(read_b),
 
-    .jump_active_o(alu_jump_en),
-    .jump_destination_o(alu_jump_destination),
+    .branch_active_o(alu_branch_en),
+    .branch_destination_o(alu_branch_destination),
 
     .result_o (alu_out),
     .details_o(alu_details)

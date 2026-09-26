@@ -22,6 +22,9 @@ package types;
     logic [19:0] address;
     logic [31:0] instruction;
 
+    logic branch_predicted;
+    logic [19:0] branch_dest;
+
     logic is_alu;
     logic is_mem;
     logic is_mem_store;

@@ -10,8 +10,9 @@ main:
 
 loop:
     lw $3, data($1)
-    add $2, $2, $3
     addi $1, $1, 1
+    add $2, $2, $3 // access to a register from a load must occur one cycle
+                   // after the load occurs to avoid a bubble in the pipeline.
     subi $4, $1, 8
     bnez $4, loop
 

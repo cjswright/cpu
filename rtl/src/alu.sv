@@ -17,8 +17,8 @@ module alu (
   input  [31:0] read_a_i,
   input  [31:0] read_b_i,
 
-  output jump_active_o,
-  output [19:0] jump_destination_o,
+  output branch_active_o,
+  output [19:0] branch_destination_o,
 
   output                              [31:0] result_o,
   output types::instruction_details_t        details_o
@@ -34,17 +34,27 @@ module alu (
   assign read_a_index_o = details_i.rs;
   assign read_b_index_o = details_i.rt;
 
-  logic                               is_imm = details_i.op[0];
+  logic is_imm = details_i.op[0];
 
-  logic                        [31:0] opa;
-  logic                        [31:0] opb;
+  logic [31:0] opa;
+  logic [31:0] opb;
 
-  types::instruction_details_t        details_d;
+  types::instruction_details_t details_d;
 
-  assign jump_destination_o = details_i.branch_target;
-  wire jump_cond_met = (details_i.conditional_req_state && opa != '0) ||
-    (!details_i.conditional_req_state && opa == 0);
-  assign jump_active_o = details_i.is_valid && details_i.is_conditional_branch && jump_cond_met;
+  logic branch_cond_met, branch_should_take, predicted_and_wrong, not_predicted_and_taken;
+  logic [19:0] next_i_not_taken;
+
+  assign branch_cond_met = (details_i.conditional_req_state && opa != '0) ||
+                           (!details_i.conditional_req_state && opa == 0);
+  assign branch_should_take = details_i.is_conditional_branch && branch_cond_met;
+  assign next_i_not_taken = details_i.address + 1;
+
+  assign branch_destination_o = branch_should_take ? details_i.branch_target : next_i_not_taken;
+
+  assign predicted_and_wrong =
+        details_i.branch_predicted && branch_destination_o != details_i.branch_target;
+  assign not_predicted_and_taken = !details_i.branch_predicted && branch_should_take;
+  assign branch_active_o = details_i.is_valid && (predicted_and_wrong || not_predicted_and_taken);
 
   always_comb begin
     if (details_i.rs_hazard == types::ALU_REG_PREV) opa = result_q;
@@ -88,9 +98,12 @@ module alu (
              details_i.instruction, details_i.is_valid, result_d, details_i.op, details_i.func,
              details_i.imm, details_i.offs, details_i.rs, details_i.rt);
     $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a_i, read_b_i, opa, opb);
+    $display("ALU    rsh=%d rth=%d", details_i.rs_hazard, details_i.rt_hazard);
     $display("ALU    VCJ=%d%d%d", details_i.is_valid, details_i.is_conditional_branch,
-             jump_cond_met);
-    $display("ALI    rsh=%d rth=%d", details_i.rs_hazard, details_i.rt_hazard);
+             branch_cond_met);
+
+    $display("ALU    MISWNA=%d%d%d%d%d%d", branch_cond_met, details_i.is_conditional_branch,
+             branch_should_take, predicted_and_wrong, not_predicted_and_taken, branch_active_o);
 
     details_q <= details_d;
     result_q  <= result_d;
