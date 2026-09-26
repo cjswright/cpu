@@ -47,9 +47,9 @@ module decoder (
     decoded.is_valid = flush_i ? 0 : valid_i;
 
     decoded.is_alu = decoded.op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM};
-    decoded.is_mem = decoded.op inside {`OPC_LOAD, `OPC_STORE};
     decoded.is_mem_store = decoded.op == `OPC_STORE;
     decoded.is_mem_load = decoded.op == `OPC_LOAD;
+    decoded.is_mem = decoded.is_mem_load || decoded.is_mem_store;
     decoded.modifies_reg_rd = decoded.is_mem_load || decoded.is_alu;
     decoded.is_conditional_branch = decoded.op inside {`OPC_BEQZ, `OPC_BNEZ};
     decoded.conditional_req_state = decoded.op == `OPC_BNEZ;
@@ -68,12 +68,14 @@ module decoder (
     else decoded.rt_hazard = types::ALU_REG_NORMAL;
   end  // always_comb
 
-  /* If the previous instruction modifies a register that we are about to jump
-    * to, we need to insert a noop so the ALU can calculate the new value of the
-    * register. */
   always_comb begin
     if (details_q.is_valid && (
+      /* If the previous instruction modifies a register that we are about to jump
+       * to, we need to insert a noop so the ALU can calculate the new value of the
+       * register. */
       (decoded.is_jump_register && details_q.modifies_reg_rd && details_q.rd == decoded.rs) ||
+      /* ... or if we're doing an access from somewhere that we *just* did a load */
+      /* into, we also need to wait a cycle... */
       (details_q.is_mem_load && details_q.rd == decoded.rs) ||
       (details_q.is_mem_load && details_q.rd == decoded.rt)
     ))
