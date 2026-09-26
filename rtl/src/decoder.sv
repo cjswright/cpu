@@ -34,6 +34,7 @@ module decoder (
   assign details_o = details_q;
 
   always_comb begin
+    decoded.instruction = instruction_i;
     decoded.address = address_i;
     decoded.op = instruction_i[31:28];
     decoded.rd = instruction_i[27:24];
@@ -51,17 +52,18 @@ module decoder (
     decoded.is_mem_load = decoded.op == `OPC_LOAD;
     decoded.modifies_reg_rd = decoded.is_mem_load || decoded.is_alu;
     decoded.is_conditional_branch = decoded.op inside {`OPC_BEQZ, `OPC_BNEZ};
+    decoded.conditional_req_state = decoded.op == `OPC_BNEZ;
     decoded.is_jump = decoded.op inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR};
     decoded.is_jump_link = decoded.op inside {`OPC_JAL, `OPC_JALR};
     decoded.is_jump_register = decoded.op inside {`OPC_JR, `OPC_JALR};
 
-    decoded.branch_target = decoded.address + decoded.offs;
+    decoded.branch_target = decoded.address + decoded.offs + 1;
 
-    if (details_q.is_alu && details_q.rd != 0 && decoded.rs == details_q.rd)
+    if (details_q.is_valid && details_q.is_alu && details_q.rd != 0 && decoded.rs == details_q.rd)
       decoded.rs_hazard = types::ALU_REG_PREV;
     else decoded.rs_hazard = types::ALU_REG_NORMAL;
 
-    if (details_q.is_alu && details_q.rd != 0 && decoded.rt == details_q.rd)
+    if (details_q.is_valid && details_q.is_alu && details_q.rd != 0 && decoded.rt == details_q.rd)
       decoded.rt_hazard = types::ALU_REG_PREV;
     else decoded.rt_hazard = types::ALU_REG_NORMAL;
   end  // always_comb
@@ -70,11 +72,11 @@ module decoder (
     * to, we need to insert a noop so the ALU can calculate the new value of the
     * register. */
   always_comb begin
-    if (
+    if (details_q.is_valid && (
       (decoded.is_jump_register && details_q.modifies_reg_rd && details_q.rd == decoded.rs) ||
       (details_q.is_mem_load && details_q.rd == decoded.rs) ||
       (details_q.is_mem_load && details_q.rd == decoded.rt)
-    )
+    ))
       stall_o = 1;
     else stall_o = 0;
   end
@@ -98,10 +100,9 @@ module decoder (
     if (details_d.is_valid && !rst_async_i && details_d.op != `OPC_NOOP)
       valid_instr_count_q <= valid_instr_count_q + 1;
 
-    $display("DECODER(%d) %x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d", rst_async_i,
-             instruction_i, details_d.is_valid, details_d.op, details_d.rd, details_d.rs,
-             details_d.func, details_d.imm, details_d.offs, details_d.rt, details_d.rs_hazard,
-             details_d.rt_hazard);
+    $display("DECODER(%08x) v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d", instruction_i,
+             details_d.is_valid, details_d.op, details_d.rd, details_d.rs, details_d.func,
+             details_d.imm, details_d.offs, details_d.rt, details_d.rs_hazard, details_d.rt_hazard);
 
     $display("HAZARD stall_o=%d", stall_o);
   end

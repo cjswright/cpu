@@ -49,8 +49,6 @@ module wramp (
   wire                         [31:0] read_c;
   wire                         [19:0] read_jump;
 
-  wire                                alu_is_set;
-
   register_bank _register_bank (
     .rst_async_i(rst_async_i),
     .clk_i(clk_i),
@@ -76,6 +74,9 @@ module wramp (
   wire ifetch_valid;
   wire ifetch_stalled;
 
+  wire alu_jump_en;
+  wire [19:0] alu_jump_destination;
+
   wire decoder_jump_en;
   wire [19:0] decoder_jump_destination;
 
@@ -95,6 +96,9 @@ module wramp (
     .decoder_jump_en_i  (decoder_jump_en),
     .decoder_jump_dest_i(decoder_jump_destination),
 
+    .alu_jump_en_i  (alu_jump_en),
+    .alu_jump_dest_i(alu_jump_destination),
+
     .valid_o(ifetch_valid),
     .instruction_o(instruction),
     .address_o(i_address)
@@ -111,7 +115,7 @@ module wramp (
     .instruction_i(instruction),
     .address_i(i_address),
     .valid_i(ifetch_valid),
-    .flush_i(!alu_is_set && details.op inside {`OPC_BEQZ, `OPC_BNEZ}),
+    .flush_i(alu_jump_en),
 
     .jump_active_o(decoder_jump_en),
     .jump_destination_o(decoder_jump_destination),
@@ -136,9 +140,10 @@ module wramp (
     .read_a_i(read_a),
     .read_b_i(read_b),
 
+    .jump_active_o(alu_jump_en),
+    .jump_destination_o(alu_jump_destination),
 
     .result_o (alu_out),
-    .is_set_o (alu_is_set),
     .details_o(alu_details)
   );
 

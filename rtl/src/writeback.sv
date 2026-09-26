@@ -41,8 +41,8 @@ module writeback (
   assign write_o = data_i;
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin
-    $display("WRITEBK(%d) v=%d data=%x op=%x rd=%x offs=%x", rst_async_i, details_i.is_valid,
-             data_i, details_i.op, details_i.rd, details_i.offs);
+    $display("WRITEBK(%08x) v=%d data=%x op=%x rd=%x offs=%x", details_i.instruction,
+             details_i.is_valid, data_i, details_i.op, details_i.rd, details_i.offs);
   end
 
 endmodule

@@ -20,6 +20,8 @@ module i_fetch (
   input              stalled_i,
   input              decoder_jump_en_i,
   input       [19:0] decoder_jump_dest_i,
+  input              alu_jump_en_i,
+  input       [19:0] alu_jump_dest_i,
   output             valid_o,
   output reg  [31:0] instruction_o,
   output      [19:0] address_o
@@ -38,7 +40,10 @@ module i_fetch (
 
   assign counter_d = rst_async_i ? 0 : stalled_i ? fetch_address_o : fetch_address_o + 1;
 
-  assign fetch_address_o = decoder_jump_en_i ? decoder_jump_dest_i : counter_q;
+  assign fetch_address_o =
+           alu_jump_en_i ? alu_jump_dest_i
+             : decoder_jump_en_i ? decoder_jump_dest_i
+             : counter_q;
   assign fetch_en_o = !stalled_i;
 
   assign address_o = address_i;

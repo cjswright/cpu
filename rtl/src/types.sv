@@ -20,6 +20,7 @@ package types;
 
   typedef struct {
     logic [19:0] address;
+    logic [31:0] instruction;
 
     logic is_alu;
     logic is_mem;
@@ -27,6 +28,7 @@ package types;
     logic is_mem_load;
     logic modifies_reg_rd;
     logic is_conditional_branch;
+    logic conditional_req_state;
     logic is_jump;
     logic is_jump_link;
     logic is_jump_register;

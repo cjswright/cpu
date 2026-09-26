@@ -17,8 +17,10 @@ module alu (
   input  [31:0] read_a_i,
   input  [31:0] read_b_i,
 
-  output reg                          [31:0] result_o,
-  output                                     is_set_o,
+  output jump_active_o,
+  output [19:0] jump_destination_o,
+
+  output                              [31:0] result_o,
   output types::instruction_details_t        details_o
 );
 
@@ -31,7 +33,6 @@ module alu (
 
   assign read_a_index_o = details_i.rs;
   assign read_b_index_o = details_i.rt;
-  assign is_set_o = result_d[0];
 
   logic                               is_imm = details_i.op[0];
 
@@ -40,15 +41,22 @@ module alu (
 
   types::instruction_details_t        details_d;
 
-  always_comb begin
-    details_d = details_i;
+  assign jump_destination_o = details_i.branch_target;
+  wire jump_cond_met = (details_i.conditional_req_state && opa != '0) ||
+    (!details_i.conditional_req_state && opa == 0);
+  assign jump_active_o = details_i.is_valid && details_i.is_conditional_branch && jump_cond_met;
 
+  always_comb begin
     if (details_i.rs_hazard == types::ALU_REG_PREV) opa = result_q;
     else opa = read_a_i;
 
     if (is_imm) opb = {16'b0, details_i.imm};
     else if (details_i.rt_hazard == types::ALU_REG_PREV) opb = result_q;
     else opb = read_b_i;
+  end
+
+  always_comb begin
+    details_d = details_i;
 
     if (details_i.op inside {`OPC_ARITH, `OPC_AR_IM}) begin
       // For reference, but it only matters for mult and divide
@@ -72,21 +80,17 @@ module alu (
       endcase
     end else if (details_i.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP}) begin
       result_d = opa + {11'b0, details_i.offs};
-    end else if (details_i.op == `OPC_BNEZ) begin
-      result_d = 0;
-      result_d[0] = opa != 0;
-    end else if (details_i.op == `OPC_BEQZ) begin
-      result_d = 0;
-      result_d[0] = opa == 0;
-    end else begin
-      details_d.is_valid = 0;
     end
   end
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin
-    $display("ALU    (%d) v=%d o=%x f=%x i=%x rs=%x rt=%x", rst_async_i, details_i.is_valid,
-             details_i.op, details_i.func, details_i.imm, details_i.rs, details_i.rt);
+    $display("ALU    (%08x) v=%d result=%x o=%x f=%x i=%x ofs=%x rs=%x rt=%x",
+             details_i.instruction, details_i.is_valid, result_d, details_i.op, details_i.func,
+             details_i.imm, details_i.offs, details_i.rs, details_i.rt);
     $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a_i, read_b_i, opa, opb);
+    $display("ALU    VCJ=%d%d%d", details_i.is_valid, details_i.is_conditional_branch,
+             jump_cond_met);
+    $display("ALI    rsh=%d rth=%d", details_i.rs_hazard, details_i.rt_hazard);
 
     details_q <= details_d;
     result_q  <= result_d;

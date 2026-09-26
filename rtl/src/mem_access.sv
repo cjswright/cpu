@@ -43,9 +43,9 @@ module mem_access (
   assign details_o = details_q;
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin
-    $display("MEMACC (%d) v=%d data=%x op=%x offs=%x rd=%d %x, store=%d load=%d", rst_async_i,
-             details_i.is_valid, data_i, details_i.op, details_i.offs, details_i.rd, rd_i,
-             mem_write_en_o, mem_read_en_o);
+    $display("MEMACC (%08x) v=%d data=%x op=%x offs=%x rd=%d %x, store=%d load=%d",
+             details_i.instruction, details_i.is_valid, data_i, details_i.op, details_i.offs,
+             details_i.rd, rd_i, mem_write_en_o, mem_read_en_o);
 
     // TODO: Assumes the mem access occurred in one cycle - need to link these properly
     details_q <= details_i;
