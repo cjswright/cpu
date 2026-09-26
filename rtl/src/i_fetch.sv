@@ -7,47 +7,49 @@
 `include "types.sv"
 
 module i_fetch (
-  input rst_async,
-  clk,
+  input rst_async_i,
+  input clk_i,
 
-  input stalled,
+  // For driving instruction bus
+  output wire        fetch_en_o,
+  output wire [19:0] fetch_address_o,
+  // response from instruction bus
+  input              valid_i,
+  input       [19:0] address_i,
+  input       [31:0] data_i,
 
-  output wire        out_fetch_en,
-  output reg  [31:0] out_instruction,
-  output      [19:0] out_address,
-  output             valid,
 
-  output wire [19:0] req_mem_address,
+  input stalled_i,
 
-  input        fetch_valid,
-  input [19:0] fetch_address,
-  input [31:0] fetch_value
+  output            valid_o,
+  output reg [31:0] instruction_o,
+  output     [19:0] address_o
 );
 
-  reg   [19:0] counter;
-  logic [19:0] next_counter;
+  logic [19:0] counter_q;
+  logic [19:0] counter_d;
 
-  reg          held;
-  always_ff @(posedge clk or posedge rst_async)
-    if (rst_async) held <= 0;
-    else held <= valid && stalled;
+  reg          held_q;
+  always_ff @(posedge clk_i or posedge rst_async_i)
+    if (rst_async_i) held_q <= 0;
+    else held_q <= valid_i && stalled_i;
 
-  assign valid = held || fetch_valid;
-  assign out_instruction = fetch_value;
+  assign valid_o = held_q || valid_i;
+  assign instruction_o = data_i;
 
-  assign next_counter = rst_async ? 0 : stalled ? counter : counter + 1;
+  assign counter_d = rst_async_i ? 0 : stalled_i ? counter_q : counter_q + 1;
 
-  assign req_mem_address = counter;
-  assign out_fetch_en = !stalled;
+  assign fetch_address_o = counter_q;
+  assign fetch_en_o = !stalled_i;
 
-  assign out_address = fetch_address;
+  assign address_o = address_i;
 
-  always_ff @(posedge clk or posedge rst_async) begin
-    if (rst_async) counter <= 0;
-    else counter <= next_counter;
+  always_ff @(posedge clk_i or posedge rst_async_i) begin
+    if (rst_async_i) counter_q <= 0;
+    else counter_q <= counter_d;
 
-    $display("I_FETCH(%d) n_c=%d c=%d VSHF=%d%d%d%d", rst_async, next_counter, counter, valid,
-             stalled, held, fetch_valid);
+    $display("I_FETCH(%d) n_c=%d c=%d VSHF=%d%d%d%d", rst_async_i, counter_d, counter_q, valid_i,
+             stalled_i, held_q, valid_i);
   end
 
 endmodule

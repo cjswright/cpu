@@ -1,0 +1,4 @@
++port-name-suffix
++signal-name-style
++dff-name-style=input:;output:q;waive_lhs_regex:(?i)(mem|registers).*
++parameter-name-style=localparam_style:CamelCase;parameter_style:CamelCase

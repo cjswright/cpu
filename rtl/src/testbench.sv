@@ -99,23 +99,24 @@ module testbench;
   final $display("CLKS %d", clk_counter);
 
   wramp _wramp (
-    .clk(clk),
-    .rst_async(rst_async),
+    .clk_i(clk),
+    .rst_async_i(rst_async),
 
-    .ifetch_req_en(ifetch_req_en),
-    .ifetch_req_address(ifetch_req_address),
-    .ifetch_is_valid(ifetch_is_valid),
-    .ifetch_address(ifetch_address),
-    .ifetch_data(ifetch_data),
+    .ifetch_req_en_o(ifetch_req_en),
+    .ifetch_req_address_o(ifetch_req_address),
+    .ifetch_is_valid_i(ifetch_is_valid),
+    .ifetch_address_i(ifetch_address),
+    .ifetch_data_i(ifetch_data),
 
-    .mem_address(mem_address),
-    .mem_fetch_valid(mem_read_is_valid),
-    .mem_fetch_value(mem_read_value),
-    .mem_read_en(mem_read_en),
-    .mem_write_en(mem_write_en),
-    .mem_write_value(mem_write_value),
-    .debug_reg_index(debug_reg_index),
-    .debug_reg(debug_reg)
+    .mem_address_o(mem_address),
+    .mem_read_en_o(mem_read_en),
+    .mem_fetch_value_i(mem_read_value),
+    .mem_fetch_valid_i(mem_read_is_valid),
+    .mem_write_en_o(mem_write_en),
+    .mem_write_value_o(mem_write_value),
+
+    .debug_reg_index_i(debug_reg_index),
+    .debug_reg_o(debug_reg)
   );
 
   always_ff @(posedge clk) begin

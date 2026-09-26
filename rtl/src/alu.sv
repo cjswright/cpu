@@ -7,87 +7,93 @@
 `include "types.sv"
 
 module alu (
-  input rst_async,
-  clk,
+  input rst_async_i,
+  input clk_i,
 
-  input types::InstructionDetails details,
+  input types::instruction_details_t details_i,
 
-  output [ 3:0] read_a_index,
-  output [ 3:0] read_b_index,
-  input  [31:0] read_a,
-  input  [31:0] read_b,
+  output [ 3:0] read_a_index_o,
+  output [ 3:0] read_b_index_o,
+  input  [31:0] read_a_i,
+  input  [31:0] read_b_i,
 
-  input [31:0] mem,
+  input [31:0] mem_i,
 
-  output reg                       [31:0] out,
-  output                                  is_set,
-  output types::InstructionDetails        out_details
+  output reg                          [31:0] result_o,
+  output                                     is_set_o,
+  output types::instruction_details_t        details_o
 );
 
-  assign read_a_index = details.rs;
-  assign read_b_index = details.rt;
-  assign is_set = next_out[0];
+  types::instruction_details_t details_q;
+  assign details_o = details_q;
 
-  let is_imm = details.op[0];
+  logic [31:0] result_q;
+  logic [31:0] result_d;
+  assign result_o = result_q;
 
-  logic                     [31:0] opa;
-  logic                     [31:0] opb;
+  assign read_a_index_o = details_i.rs;
+  assign read_b_index_o = details_i.rt;
+  assign is_set_o = result_d[0];
 
-  logic                     [31:0] next_out;
-  types::InstructionDetails        next_out_details;
+  logic                               is_imm = details_i.op[0];
+
+  logic                        [31:0] opa;
+  logic                        [31:0] opb;
+
+  types::instruction_details_t        details_d;
 
   always_comb begin
-    next_out_details = details;
+    details_d = details_i;
 
-    if (details.rs_hazard == types::ALU_REG_PREV) opa = out;
-    else if (details.rs_hazard == types::ALU_REG_MEM) opa = mem;
-    else opa = read_a;
+    if (details_i.rs_hazard == types::ALU_REG_PREV) opa = result_q;
+    else if (details_i.rs_hazard == types::ALU_REG_MEM) opa = mem_i;
+    else opa = read_a_i;
 
-    if (is_imm) opb = {16'b0, details.imm};
-    else if (details.rt_hazard == types::ALU_REG_PREV) opb = out;
-    else if (details.rt_hazard == types::ALU_REG_MEM) opb = mem;
-    else opb = read_b;
+    if (is_imm) opb = {16'b0, details_i.imm};
+    else if (details_i.rt_hazard == types::ALU_REG_PREV) opb = result_q;
+    else if (details_i.rt_hazard == types::ALU_REG_MEM) opb = mem_i;
+    else opb = read_b_i;
 
-    if (details.op inside {`OPC_ARITH, `OPC_AR_IM}) begin
+    if (details_i.op inside {`OPC_ARITH, `OPC_AR_IM}) begin
       // For reference, but it only matters for mult and divide
-      //logic is_unsigned = details.func[0];
-      casez (details.func)
-        `FUNC_ADD: next_out = opa + opb;
-        `FUNC_SUB: next_out = opa - opb;
+      //logic is_unsigned = details_i.func[0];
+      casez (details_i.func)
+        `FUNC_ADD: result_d = opa + opb;
+        `FUNC_SUB: result_d = opa - opb;
 
         /* Not unsigned/signed */
-        `FUNC_SLL: next_out = opa << opb;
-        `FUNC_AND: next_out = opa & opb;
-        `FUNC_SRL: next_out = opa >> opb;
-        `FUNC_OR:  next_out = opa | opb;
-        `FUNC_SRA: next_out = opa >>> opb;
-        `FUNC_XOR: next_out = opa ^ opb;
-        default:   next_out_details.is_valid = 0;
+        `FUNC_SLL: result_d = opa << opb;
+        `FUNC_AND: result_d = opa & opb;
+        `FUNC_SRL: result_d = opa >> opb;
+        `FUNC_OR:  result_d = opa | opb;
+        `FUNC_SRA: result_d = opa >>> opb;
+        `FUNC_XOR: result_d = opa ^ opb;
+        default:   details_d.is_valid = 0;
       endcase
-    end else if (details.op inside {`OPC_TEST, `OPC_TS_IM}) begin
-      casez (details.func)
-        default: next_out_details.is_valid = 0;
+    end else if (details_i.op inside {`OPC_TEST, `OPC_TS_IM}) begin
+      casez (details_i.func)
+        default: details_d.is_valid = 0;
       endcase
-    end else if (details.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP}) begin
-      next_out = opa + {11'b0, details.offs};
-    end else if (details.op == `OPC_BNEZ) begin
-      next_out = 0;
-      next_out[0] = opa != 0;
-    end else if (details.op == `OPC_BEQZ) begin
-      next_out = 0;
-      next_out[0] = opa == 0;
+    end else if (details_i.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP}) begin
+      result_d = opa + {11'b0, details_i.offs};
+    end else if (details_i.op == `OPC_BNEZ) begin
+      result_d = 0;
+      result_d[0] = opa != 0;
+    end else if (details_i.op == `OPC_BEQZ) begin
+      result_d = 0;
+      result_d[0] = opa == 0;
     end else begin
-      next_out_details.is_valid = 0;
+      details_d.is_valid = 0;
     end
   end
 
-  always_ff @(posedge clk or posedge rst_async) begin
-    $display("ALU    (%d) v=%d o=%x f=%x i=%x rs=%x rt=%x", rst_async, details.is_valid,
-             details.op, details.func, details.imm, details.rs, details.rt);
-    $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a, read_b, opa, opb);
+  always_ff @(posedge clk_i or posedge rst_async_i) begin
+    $display("ALU    (%d) v=%d o=%x f=%x i=%x rs=%x rt=%x", rst_async_i, details_i.is_valid,
+             details_i.op, details_i.func, details_i.imm, details_i.rs, details_i.rt);
+    $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a_i, read_b_i, opa, opb);
 
-    out_details <= next_out_details;
-    out <= next_out;
+    details_q <= details_d;
+    result_q  <= result_d;
   end
 
 endmodule

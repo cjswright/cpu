@@ -12,12 +12,12 @@ package types;
     TYPE_R,
     TYPE_I,
     TYPE_J
-  } Type;
+  } type_e;
   typedef enum {
     ALU_REG_NORMAL,
     ALU_REG_PREV,
     ALU_REG_MEM
-  } AluRegHazard;
+  } alu_reg_hazard_e;
 
   typedef struct {
     logic [19:0] address;
@@ -36,9 +36,9 @@ package types;
 
     /* Used to send the output of this instruction to the rs or rt parameter
        * of the next instruction in the ALU */
-    AluRegHazard rs_hazard;
-    AluRegHazard rt_hazard;
-  } InstructionDetails;
+    alu_reg_hazard_e rs_hazard;
+    alu_reg_hazard_e rt_hazard;
+  } instruction_details_t;
 endpackage
 
 

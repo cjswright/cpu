@@ -7,82 +7,86 @@
 `include "types.sv"
 
 module wramp (
-  input clk,
-  input rst_async,
+  input clk_i,
+  input rst_async_i,
 
-  output        ifetch_req_en,
-  output [19:0] ifetch_req_address,
+  output        ifetch_req_en_o,
+  output [19:0] ifetch_req_address_o,
 
-  input        ifetch_is_valid,
-  input [19:0] ifetch_address,
-  input [31:0] ifetch_data,
+  input        ifetch_is_valid_i,
+  input [19:0] ifetch_address_i,
+  input [31:0] ifetch_data_i,
 
-  output var [19:0] mem_address,
-  output            mem_read_en,
+  output var [19:0] mem_address_o,
+  output            mem_read_en_o,
 
-  input [31:0] mem_fetch_value,
+  input [31:0] mem_fetch_value_i,
   /* verilator lint_off UNUSED */
-  input        mem_fetch_valid,
+  input        mem_fetch_valid_i,
   /* verilator lint_on UNUSED */
 
-  output        mem_write_en,
-  output [31:0] mem_write_value,
+  output        mem_write_en_o,
+  output [31:0] mem_write_value_o,
 
-  input  [ 3:0] debug_reg_index,
-  output [31:0] debug_reg
+  input  [ 3:0] debug_reg_index_i,
+  output [31:0] debug_reg_o
 );
 
-  wire                      [31:0] instruction;
-  wire                      [19:0] i_address;
+  wire                         [31:0] instruction;
+  wire                         [19:0] i_address;
 
-  types::InstructionDetails        details;
+  types::instruction_details_t        details;
 
-  wire                      [ 3:0] read_a_index;
-  wire                      [ 3:0] read_b_index;
-  wire                      [ 3:0] read_c_index;
-  wire                      [ 3:0] write_index;
-  wire                             write_en;
-  wire                      [31:0] write;
-  wire                      [31:0] read_a;
-  wire                      [31:0] read_b;
-  wire                      [31:0] read_c;
+  wire                         [ 3:0] read_a_index;
+  wire                         [ 3:0] read_b_index;
+  wire                         [ 3:0] read_c_index;
+  wire                         [ 3:0] write_index;
+  wire                                write_en;
+  wire                         [31:0] write;
+  wire                         [31:0] read_a;
+  wire                         [31:0] read_b;
+  wire                         [31:0] read_c;
 
-  wire                             alu_is_set;
+  wire                                alu_is_set;
 
   register_bank _register_bank (
-    .rst_async(rst_async),
-    .clk(clk),
-    .read_a_index(read_a_index),
-    .read_b_index(read_b_index),
-    .read_c_index(read_c_index),
-    .write_index(write_index),
-    .write_en(write_en),
-    .write(write),
-    .read_a(read_a),
-    .read_b(read_b),
-    .read_c(read_c),
+    .rst_async_i(rst_async_i),
+    .clk_i(clk_i),
+    .read_a_index_i(read_a_index),
+    .read_b_index_i(read_b_index),
+    .read_c_index_i(read_c_index),
+    .write_index_i(write_index),
+    .write_en_i(write_en),
+    .write_i(write),
 
-    .debug_index(debug_reg_index),
-    .debug(debug_reg)
+    .read_a_o(read_a),
+    .read_b_o(read_b),
+    .read_c_o(read_c),
+
+    .debug_index_i(debug_reg_index_i),
+    .debug_o(debug_reg_o)
   );
 
-  types::InstructionDetails alu_details;
+  types::instruction_details_t alu_details;
 
   wire ifetch_valid;
   wire ifetch_stalled;
 
   i_fetch _i_fetch (
-    .rst_async(rst_async),
-    .clk(clk),
-    .stalled(ifetch_stalled),
-    .out_fetch_en(ifetch_req_en),
-    .out_instruction(instruction),
-    .out_address(i_address),
-    .valid(ifetch_valid),
-    .req_mem_address(ifetch_req_address),
-    .fetch_valid(ifetch_is_valid),
-    .fetch_address(ifetch_address),
-    .fetch_value(ifetch_data)
+    .rst_async_i(rst_async_i),
+    .clk_i(clk_i),
+
+    .fetch_en_o(ifetch_req_en_o),
+    .fetch_address_o(ifetch_req_address_o),
+
+    .stalled_i(ifetch_stalled),
+    .valid_i(ifetch_is_valid_i),
+    .address_i(ifetch_address_i),
+    .data_i(ifetch_data_i),
+
+    .valid_o(ifetch_valid),
+    .instruction_o(instruction),
+    .address_o(i_address)
   );
 
   wire decoder_req_skip;
@@ -90,64 +94,68 @@ module wramp (
   assign ifetch_stalled = decoder_req_skip;
 
   decoder _decoder (
-    .rst_async(rst_async),
-    .clk(clk),
-    .instruction(instruction),
-    .address(i_address),
-    .instruction_valid(ifetch_valid),
-    .flush(!alu_is_set && details.op inside {`OPC_BEQZ, `OPC_BNEZ}),
-    .details(details),
-    .fetch_skip(decoder_req_skip)
+    .rst_async_i(rst_async_i),
+    .clk_i(clk_i),
+
+    .instruction_i(instruction),
+    .address_i(i_address),
+    .valid_i(ifetch_valid),
+    .flush_i(!alu_is_set && details.op inside {`OPC_BEQZ, `OPC_BNEZ}),
+
+    .details_o(details),
+    .stall_o  (decoder_req_skip)
   );
 
   wire [31:0] alu_out;
 
   alu _alu (
-    .rst_async(rst_async),
-    .clk(clk),
-    .details(details),
-    .read_a_index(read_a_index),
-    .read_b_index(read_b_index),
-    .read_a(read_a),
-    .read_b(read_b),
+    .rst_async_i(rst_async_i),
+    .clk_i(clk_i),
 
-    .mem(mem_fetch_value),
+    .details_i(details),
 
-    .out(alu_out),
-    .is_set(alu_is_set),
-    .out_details(alu_details)
+    .read_a_index_o(read_a_index),
+    .read_b_index_o(read_b_index),
+    .read_a_i(read_a),
+    .read_b_i(read_b),
+
+    .mem_i(mem_fetch_value_i),
+
+    .result_o (alu_out),
+    .is_set_o (alu_is_set),
+    .details_o(alu_details)
   );
 
   reg [31:0] mem_access_result;
-  types::InstructionDetails mem_access_details;
+  types::instruction_details_t mem_access_details;
 
   mem_access _mem_access (
-    .rst_async(rst_async),
-    .clk(clk),
-    .details(alu_details),
-    .data(alu_out),
+    .rst_async_i(rst_async_i),
+    .clk_i(clk_i),
+    .details_i(alu_details),
+    .data_i(alu_out),
 
-    .mem_read_value(mem_fetch_value),
-    .mem_write_value(mem_write_value),
-    .mem_address(mem_address),
-    .mem_read_en(mem_read_en),
-    .mem_write_en(mem_write_en),
+    .mem_read_value_i(mem_fetch_value_i),
+    .mem_write_value_o(mem_write_value_o),
+    .mem_address_o(mem_address_o),
+    .mem_read_en_o(mem_read_en_o),
+    .mem_write_en_o(mem_write_en_o),
 
-    .rd(read_c),
-    .rd_index(read_c_index),
+    .rd_i(read_c),
+    .rd_index_o(read_c_index),
 
-    .out_details(mem_access_details),
-    .result(mem_access_result)
+    .details_o(mem_access_details),
+    .result_o (mem_access_result)
   );
 
   writeback _writeback (
-    .rst_async(rst_async),
-    .clk(clk),
-    .details(mem_access_details),
-    .data(mem_access_result),
-    .write_en(write_en),
-    .write(write),
-    .write_index(write_index)
+    .rst_async_i(rst_async_i),
+    .clk_i(clk_i),
+    .details_i(mem_access_details),
+    .data_i(mem_access_result),
+    .write_en_o(write_en),
+    .write_o(write),
+    .write_index_o(write_index)
   );
 
 

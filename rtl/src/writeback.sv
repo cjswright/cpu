@@ -7,14 +7,15 @@
 `include "types.sv"
 
 module writeback (
-  input                                  rst_async,
-  clk,
-  input types::InstructionDetails        details,
-  input                           [31:0] data,
+  input rst_async_i,
+  input clk_i,
 
-  output        write_en,
-  output [31:0] write,
-  output [ 3:0] write_index
+  input types::instruction_details_t        details_i,
+  input                              [31:0] data_i,
+
+  output        write_en_o,
+  output [31:0] write_o,
+  output [ 3:0] write_index_o
 );
 
   /* All of the outputs of this module are fed into the register bank
@@ -29,18 +30,19 @@ module writeback (
 
   logic disabled, op_req_writeback;
 
-  assign disabled = (rst_async || !details.is_valid);
-  assign op_req_writeback = details.op != `OPC_STORE;
-  let write_pc = details.op inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR, `OPC_BEQZ, `OPC_BNEZ};
-  let is_conditional = details.op inside {`OPC_BEQZ, `OPC_BNEZ};
+  assign disabled = (rst_async_i || !details_i.is_valid);
+  assign op_req_writeback = details_i.op != `OPC_STORE;
+  let write_pc = details_i.op
+    inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR, `OPC_BEQZ, `OPC_BNEZ};
+  let is_conditional = details_i.op inside {`OPC_BEQZ, `OPC_BNEZ};
 
-  assign write_index = details.rd;
-  assign write_en = !disabled && op_req_writeback && !write_pc;
-  assign write = data;
+  assign write_index_o = details_i.rd;
+  assign write_en_o = !disabled && op_req_writeback && !write_pc;
+  assign write_o = data_i;
 
-  always_ff @(posedge clk or posedge rst_async) begin
-    $display("WRITEBK(%d) v=%d data=%x op=%x rd=%x offs=%x", rst_async, details.is_valid, data,
-             details.op, details.rd, details.offs);
+  always_ff @(posedge clk_i or posedge rst_async_i) begin
+    $display("WRITEBK(%d) v=%d data=%x op=%x rd=%x offs=%x", rst_async_i, details_i.is_valid,
+             data_i, details_i.op, details_i.rd, details_i.offs);
   end
 
 endmodule
