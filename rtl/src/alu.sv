@@ -17,8 +17,6 @@ module alu (
   input  [31:0] read_a_i,
   input  [31:0] read_b_i,
 
-  input [31:0] mem_i,
-
   output reg                          [31:0] result_o,
   output                                     is_set_o,
   output types::instruction_details_t        details_o
@@ -46,12 +44,10 @@ module alu (
     details_d = details_i;
 
     if (details_i.rs_hazard == types::ALU_REG_PREV) opa = result_q;
-    else if (details_i.rs_hazard == types::ALU_REG_MEM) opa = mem_i;
     else opa = read_a_i;
 
     if (is_imm) opb = {16'b0, details_i.imm};
     else if (details_i.rt_hazard == types::ALU_REG_PREV) opb = result_q;
-    else if (details_i.rt_hazard == types::ALU_REG_MEM) opb = mem_i;
     else opb = read_b_i;
 
     if (details_i.op inside {`OPC_ARITH, `OPC_AR_IM}) begin

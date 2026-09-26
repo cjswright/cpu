@@ -15,8 +15,7 @@ package types;
   } type_e;
   typedef enum logic [1:0] {
     ALU_REG_NORMAL,
-    ALU_REG_PREV,
-    ALU_REG_MEM
+    ALU_REG_PREV
   } alu_reg_hazard_e;
 
   typedef struct {

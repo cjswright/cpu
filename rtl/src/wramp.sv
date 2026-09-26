@@ -136,7 +136,6 @@ module wramp (
     .read_a_i(read_a),
     .read_b_i(read_b),
 
-    .mem_i(mem_fetch_value_i),
 
     .result_o (alu_out),
     .is_set_o (alu_is_set),

@@ -28,19 +28,18 @@ module mem_access (
 );
 
   let disabled = rst_async_i || !details_i.is_valid;
-  let result_from_mem = (details_i.is_valid && details_i.op == `OPC_LOAD);
 
   assign mem_address_o = data_i[19:0];
 
-  assign mem_write_en_o = !disabled && details_i.op == `OPC_STORE;
-  assign mem_read_en_o = !disabled && details_i.op == `OPC_LOAD;
+  assign mem_write_en_o = !disabled && details_i.is_mem_store;
+  assign mem_read_en_o = !disabled && details_i.is_mem_load;
   assign mem_write_value_o = rd_i;
   assign rd_index_o = details_i.rd;
 
   logic                        [31:0] data_q;
   types::instruction_details_t        details_q;
 
-  assign result_o  = result_from_mem ? mem_read_value_i : data_q;
+  assign result_o  = details_q.is_mem_load ? mem_read_value_i : data_q;
   assign details_o = details_q;
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin

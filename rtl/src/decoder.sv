@@ -59,14 +59,10 @@ module decoder (
 
     if (details_q.is_alu && details_q.rd != 0 && decoded.rs == details_q.rd)
       decoded.rs_hazard = types::ALU_REG_PREV;
-    else if (details_q.is_mem_load && details_q.rd == decoded.rs)
-      decoded.rs_hazard = types::ALU_REG_MEM;
     else decoded.rs_hazard = types::ALU_REG_NORMAL;
 
     if (details_q.is_alu && details_q.rd != 0 && decoded.rt == details_q.rd)
       decoded.rt_hazard = types::ALU_REG_PREV;
-    else if (details_q.is_mem_load && details_q.rd == decoded.rt)
-      decoded.rt_hazard = types::ALU_REG_MEM;
     else decoded.rt_hazard = types::ALU_REG_NORMAL;
   end  // always_comb
 
@@ -74,7 +70,11 @@ module decoder (
     * to, we need to insert a noop so the ALU can calculate the new value of the
     * register. */
   always_comb begin
-    if (decoded.is_jump_register && details_q.modifies_reg_rd && details_q.rd == decoded.rs)
+    if (
+      (decoded.is_jump_register && details_q.modifies_reg_rd && details_q.rd == decoded.rs) ||
+      (details_q.is_mem_load && details_q.rd == decoded.rs) ||
+      (details_q.is_mem_load && details_q.rd == decoded.rt)
+    )
       stall_o = 1;
     else stall_o = 0;
   end
