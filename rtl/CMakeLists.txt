@@ -8,6 +8,7 @@ add_executable(verilate)
 
 list(APPEND rtl_sources
   src/alu.sv
+  src/branch_predictor.sv
   src/decoder.sv
   src/i_fetch.sv
   src/mem_access.sv

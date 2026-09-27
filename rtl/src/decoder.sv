@@ -107,10 +107,10 @@ module decoder (
     if (details_d.is_valid && !rst_async_i && details_d.op != `OPC_NOOP)
       valid_instr_count_q <= valid_instr_count_q + 1;
 
-    $display("DECODER(%08x) a=%x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d",
+    $display("DECODER(%08x) a=%x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d, %d",
              instruction_i, address_i, details_d.is_valid, details_d.op, details_d.rd,
              details_d.rs, details_d.func, details_d.imm, details_d.offs, details_d.rt,
-             details_d.rs_hazard, details_d.rt_hazard);
+             details_d.rs_hazard, details_d.rt_hazard, stall_o);
 
     $display("HAZARD stall_o=%d", stall_o);
   end

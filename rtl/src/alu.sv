@@ -51,8 +51,8 @@ module alu (
 
   assign branch_destination_o = branch_should_take ? details_i.branch_target : next_i_not_taken;
 
-  assign predicted_and_wrong =
-        details_i.branch_predicted && branch_destination_o != details_i.branch_target;
+  assign predicted_and_wrong = details_i.branch_predicted
+             && branch_destination_o != details_i.branch_target;
   assign not_predicted_and_taken = !details_i.branch_predicted && branch_should_take;
   assign branch_active_o = details_i.is_valid && (predicted_and_wrong || not_predicted_and_taken);
 

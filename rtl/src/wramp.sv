@@ -71,17 +71,32 @@ module wramp (
 
   types::instruction_details_t alu_details;
 
-  wire ifetch_valid;
-  wire ifetch_stalled;
+  logic ifetch_valid;
+  logic ifetch_stalled;
 
-  wire ibranch_predicted;
-  wire [19:0] ibranch_dest;
+  logic ibranch_predicted;
+  logic [19:0] ibranch_dest;
 
-  wire alu_branch_en;
-  wire [19:0] alu_branch_destination;
+  logic alu_branch_en;
+  logic [19:0] alu_branch_destination;
 
-  wire decoder_jump_en;
-  wire [19:0] decoder_jump_destination;
+  logic decoder_jump_en;
+  logic [19:0] decoder_jump_destination;
+
+  logic predict_req_active;
+  logic [19:0] predict_req_addr;
+  logic predict_response;
+  logic [19:0] predict_response_addr;
+
+  branch_predictor _branch_predictor (
+    .rst_async_i(rst_async_i),
+    .clk_i(clk_i),
+    .predict_req_active_i(predict_req_active),
+    .predict_req_addr_i(predict_req_addr),
+
+    .predict_response_o(predict_response),
+    .predict_response_addr_o(predict_response_addr)
+  );
 
   i_fetch _i_fetch (
     .rst_async_i(rst_async_i),
@@ -106,11 +121,16 @@ module wramp (
     .instruction_o(instruction),
     .address_o(i_address),
 
+    .branch_predict_req_o(predict_req_active),
+    .branch_predict_req_addr_o(predict_req_addr),
+    .branch_predict_rsp_ok_i(predict_response),
+    .branch_predict_rsp_addr_i(predict_response_addr),
+
     .branch_predicted_o(ibranch_predicted),
     .branch_dest_o(ibranch_dest)
   );
 
-  wire decoder_req_skip;
+  logic decoder_req_skip;
 
   assign ifetch_stalled = decoder_req_skip;
 
@@ -135,7 +155,7 @@ module wramp (
     .stall_o  (decoder_req_skip)
   );
 
-  wire [31:0] alu_out;
+  logic [31:0] alu_out;
 
   alu _alu (
     .rst_async_i(rst_async_i),

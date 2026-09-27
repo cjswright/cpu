@@ -25,8 +25,13 @@ module i_fetch (
   output             valid_o,
   output reg  [31:0] instruction_o,
   output      [19:0] address_o,
-  output             branch_predicted_o,
-  output      [19:0] branch_dest_o
+
+  output        branch_predict_req_o,
+  output [19:0] branch_predict_req_addr_o,
+  input         branch_predict_rsp_ok_i,
+  input  [19:0] branch_predict_rsp_addr_i,
+  output        branch_predicted_o,
+  output [19:0] branch_dest_o
 );
 
   logic [19:0] counter_q;
@@ -37,31 +42,25 @@ module i_fetch (
     if (rst_async_i) held_q <= 0;
     else held_q <= valid_o && stalled_i;
 
-  // temp: test code; only works on sum.s
-  logic [19:0] predicted_dest;
-  logic predicted;
-  logic run_test_code = 0;
-  // sum.s has a conditional branch at PC=6 -> 2 which runs most times
-  assign predicted = address_i == 6 && run_test_code;
-  assign predicted_dest = 20'd2;
-  // done
-
   assign valid_o = held_q || valid_i;
   assign instruction_o = data_i;
+
+  assign branch_predict_req_o = valid_o;
+  assign branch_predict_req_addr_o = fetch_address_o;
 
   assign counter_d = rst_async_i ? 0 : stalled_i ? fetch_address_o : fetch_address_o + 1;
 
   assign fetch_address_o =
            alu_branch_en_i ? alu_branch_dest_i
              : decoder_jump_en_i ? decoder_jump_dest_i
-               : predicted ? predicted_dest
+               : branch_predict_rsp_ok_i ? branch_predict_rsp_addr_i
                  : counter_q;
   assign fetch_en_o = !stalled_i;
 
   assign address_o = address_i;
 
-  assign branch_predicted_o = predicted;
-  assign branch_dest_o = predicted_dest;
+  assign branch_predicted_o = branch_predict_rsp_ok_i;
+  assign branch_dest_o = branch_predict_rsp_addr_i;
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin
     if (rst_async_i) counter_q <= 0;
