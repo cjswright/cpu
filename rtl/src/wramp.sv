@@ -78,6 +78,7 @@ module wramp (
   logic [19:0] ibranch_dest;
 
   logic alu_branch_en;
+  logic [19:0] alu_branch_address;
   logic [19:0] alu_branch_destination;
 
   logic decoder_jump_en;
@@ -95,7 +96,11 @@ module wramp (
     .predict_req_addr_i(predict_req_addr),
 
     .predict_response_o(predict_response),
-    .predict_response_addr_o(predict_response_addr)
+    .predict_response_addr_o(predict_response_addr),
+
+    .predict_update_i(alu_branch_en),
+    .predict_update_addr_i(alu_branch_address),
+    .predict_update_dest_i(alu_branch_destination)
   );
 
   i_fetch _i_fetch (
@@ -169,6 +174,7 @@ module wramp (
     .read_b_i(read_b),
 
     .branch_active_o(alu_branch_en),
+    .branch_address_o(alu_branch_address),
     .branch_destination_o(alu_branch_destination),
 
     .result_o (alu_out),

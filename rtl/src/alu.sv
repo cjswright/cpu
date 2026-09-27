@@ -18,6 +18,7 @@ module alu (
   input  [31:0] read_b_i,
 
   output branch_active_o,
+  output [19:0] branch_address_o,
   output [19:0] branch_destination_o,
 
   output                              [31:0] result_o,
@@ -50,6 +51,7 @@ module alu (
   assign next_i_not_taken = details_i.address + 1;
 
   assign branch_destination_o = branch_should_take ? details_i.branch_target : next_i_not_taken;
+  assign branch_address_o = details_i.address;
 
   assign predicted_and_wrong = details_i.branch_predicted
              && branch_destination_o != details_i.branch_target;
