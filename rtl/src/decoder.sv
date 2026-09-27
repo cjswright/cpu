@@ -88,13 +88,33 @@ module decoder (
     else stall_o = 0;
   end
 
+  logic [19:0] jump_destination;
+  logic jump_active;
+
   assign jump_reg_index_o = decoded.rs;
-  assign jump_destination_o = decoded.is_jump_register ? jump_reg_i : decoded.offs;
-  assign jump_active_o = decoded.is_valid && decoded.is_jump && !stall_o;
+  assign jump_destination = decoded.is_jump_register ? jump_reg_i : decoded.offs;
+
+  logic branch_not_predicted;
+
+  /* If we're branching, but we weren't predicted, then we assume that branches
+  /* with a negative offset are taken. */
+  assign branch_not_predicted =
+           decoded.is_conditional_branch && !branch_predicted_i && decoded.offs[19];
+
+  assign jump_destination_o = branch_not_predicted ? decoded.branch_target : jump_destination;
+
+  assign jump_active = decoded.is_jump || branch_not_predicted;
+  assign jump_active_o = decoded.is_valid && !stall_o && jump_active;
 
   always_comb begin
     details_d = decoded;
     details_d.is_valid = decoded.is_valid && !stall_o;
+    /* If we're on a branch and we weren't predicted, then take the initial
+    /* prediction */
+    if (branch_not_predicted) begin
+      details_d.branch_dest = decoded.branch_target;
+      details_d.branch_predicted = 1;
+    end
   end
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin
