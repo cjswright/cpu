@@ -45,7 +45,7 @@ module i_fetch (
   assign valid_o = held_q || valid_i;
   assign instruction_o = data_i;
 
-  assign branch_predict_req_o = valid_o;
+  assign branch_predict_req_o = fetch_en_o;
   assign branch_predict_req_addr_o = fetch_address_o;
 
   assign counter_d = rst_async_i ? 0 : stalled_i ? fetch_address_o : fetch_address_o + 1;
