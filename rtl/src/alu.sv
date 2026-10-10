@@ -35,6 +35,7 @@ module alu (
   assign read_a_index_o = details_i.rs;
   assign read_b_index_o = details_i.rt;
 
+  logic is_u = details_i.func[0];
   logic is_imm = details_i.op[0];
 
   logic [31:0] opa;
@@ -58,11 +59,17 @@ module alu (
   assign not_predicted_and_taken = !details_i.branch_predicted && branch_should_take;
   assign branch_active_o = details_i.is_valid && (predicted_and_wrong || not_predicted_and_taken);
 
+  logic [31:0] imm_value;
+  always_comb begin
+    if (is_u) imm_value = {16'b0, details_i.imm};
+    else imm_value = {{16{details_i.imm[15]}}, details_i.imm};
+  end
+
   always_comb begin
     if (details_i.rs_hazard == types::ALU_REG_PREV) opa = result_q;
     else opa = read_a_i;
 
-    if (is_imm) opb = {16'b0, details_i.imm};
+    if (is_imm) opb = imm_value;
     else if (details_i.rt_hazard == types::ALU_REG_PREV) opb = result_q;
     else opb = read_b_i;
   end
@@ -98,7 +105,7 @@ module alu (
   always_ff @(posedge clk_i or posedge rst_async_i) begin
     $display("ALU    (%08x) v=%d result=%x o=%x f=%x i=%x ofs=%x rs=%x rt=%x",
              details_i.instruction, details_i.is_valid, result_d, details_i.op, details_i.func,
-             details_i.imm, details_i.offs, details_i.rs, details_i.rt);
+             imm_value, details_i.offs, details_i.rs, details_i.rt);
     $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a_i, read_b_i, opa, opb);
     $display("ALU    rsh=%d rth=%d", details_i.rs_hazard, details_i.rt_hazard);
     $display("ALU    VCJ=%d%d%d", details_i.is_valid, details_i.is_conditional_branch,
