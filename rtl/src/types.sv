@@ -33,6 +33,7 @@ package types;
     logic is_conditional_branch;
     logic conditional_req_state;
     logic is_jump;
+    logic is_direct_jump;
     logic is_jump_link;
     logic is_jump_register;
 

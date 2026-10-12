@@ -50,13 +50,18 @@ module alu (
   assign branch_should_take = details_i.is_conditional_branch && branch_cond_met;
   assign next_i_not_taken = details_i.address + 1;
 
-  assign branch_destination_o = branch_should_take ? details_i.branch_target : next_i_not_taken;
+  assign branch_destination_o =
+           details_i.is_jump_register ? opa[19:0] :
+           branch_should_take ? details_i.branch_target
+             : next_i_not_taken;
   assign branch_address_o = details_i.address;
 
   assign predicted_and_wrong = details_i.branch_predicted
              && branch_destination_o != details_i.branch_dest;
   assign not_predicted_and_taken = !details_i.branch_predicted && branch_should_take;
-  assign branch_active_o = details_i.is_valid && (predicted_and_wrong || not_predicted_and_taken);
+  assign branch_active_o = details_i.is_valid && (predicted_and_wrong ||
+                                                  not_predicted_and_taken ||
+                                                  details_i.is_jump_register);
 
   logic [31:0] imm_value;
   always_comb begin
@@ -178,6 +183,8 @@ module alu (
           n,
           set_out
         );
+
+      if (details_i.is_jump_register) $display("ALU    JR %x", branch_destination_o);
     end
 
     details_q <= details_d;

@@ -20,9 +20,6 @@ module decoder (
   output jump_active_o,
   output [19:0] jump_destination_o,
 
-  output [ 3:0] jump_reg_index_o,
-  input  [19:0] jump_reg_i,
-
   output types::instruction_details_t details_o,
   output                              stall_o
 );
@@ -52,7 +49,7 @@ module decoder (
     decoded.is_valid = flush_i ? 0 : valid_i;
 
     decoded.is_alu_lhi = decoded.op == `OPC_TS_IM && decoded.func == `FUNC_LHI;
-    decoded.is_alu = decoded.op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM};
+    decoded.is_alu = decoded.op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM, `OPC_LA};
     decoded.is_alu_imm = decoded.op inside {`OPC_AR_IM, `OPC_TS_IM};
     decoded.is_alu_set = decoded.op inside {`OPC_TEST, `OPC_TS_IM} && !decoded.is_alu_lhi;
     decoded.is_alu_offs = decoded.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP, `OPC_LA};
@@ -64,26 +61,25 @@ module decoder (
     decoded.is_conditional_branch = decoded.op inside {`OPC_BEQZ, `OPC_BNEZ};
     decoded.conditional_req_state = decoded.op == `OPC_BNEZ;
     decoded.is_jump = decoded.op inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR};
+    decoded.is_direct_jump = decoded.op inside {`OPC_JUMP, `OPC_JAL};
     decoded.is_jump_link = decoded.op inside {`OPC_JAL, `OPC_JALR};
     decoded.is_jump_register = decoded.op inside {`OPC_JR, `OPC_JALR};
 
     decoded.branch_target = decoded.address + decoded.offs + 1;
 
-    if (details_q.is_valid && details_q.is_alu && details_q.rd != 0 && decoded.rs == details_q.rd)
+    if (details_q.is_valid
+      && details_q.modifies_reg_rd && details_q.rd != 0 && decoded.rs == details_q.rd)
       decoded.rs_hazard = types::ALU_REG_PREV;
     else decoded.rs_hazard = types::ALU_REG_NORMAL;
 
-    if (details_q.is_valid && details_q.is_alu && details_q.rd != 0 && decoded.rt == details_q.rd)
+    if (details_q.is_valid
+      && details_q.modifies_reg_rd && details_q.rd != 0 && decoded.rt == details_q.rd)
       decoded.rt_hazard = types::ALU_REG_PREV;
     else decoded.rt_hazard = types::ALU_REG_NORMAL;
   end  // always_comb
 
   always_comb begin
     if (details_q.is_valid && (
-      /* If the previous instruction modifies a register that we are about to jump
-       * to, we need to insert a noop so the ALU can calculate the new value of the
-       * register. */
-      (decoded.is_jump_register && details_q.modifies_reg_rd && details_q.rd == decoded.rs) ||
       /* ... or if we're doing an access from somewhere that we *just* did a load */
       /* into, we also need to wait a cycle... */
       (details_q.is_mem_load && details_q.rd == decoded.rs) ||
@@ -93,12 +89,7 @@ module decoder (
     else stall_o = 0;
   end
 
-  logic [19:0] jump_destination;
   logic jump_active;
-
-  assign jump_reg_index_o = decoded.rs;
-  assign jump_destination = decoded.is_jump_register ? jump_reg_i : decoded.offs;
-
   logic branch_not_predicted;
 
   /* If we're branching, but we weren't predicted, then we assume that branches
@@ -106,9 +97,9 @@ module decoder (
   assign branch_not_predicted =
            decoded.is_conditional_branch && !branch_predicted_i && decoded.offs[19];
 
-  assign jump_destination_o = branch_not_predicted ? decoded.branch_target : jump_destination;
+  assign jump_destination_o = branch_not_predicted ? decoded.branch_target : decoded.offs;
 
-  assign jump_active = decoded.is_jump || branch_not_predicted;
+  assign jump_active = decoded.is_direct_jump || branch_not_predicted;
   assign jump_active_o = decoded.is_valid && !stall_o && jump_active;
 
   always_comb begin
