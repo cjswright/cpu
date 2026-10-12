@@ -76,6 +76,7 @@ endpackage
 `define OPC_JALR 'b0111
 `define OPC_BEQZ 'b1010
 `define OPC_BNEZ 'b1011
+`define OPC_LA 'b1100
 
 /* Not actually part of the spec, but useful! */
 `define OPC_NOOP 'b1111
