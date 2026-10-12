@@ -66,8 +66,8 @@ module i_fetch (
     if (rst_async_i) counter_q <= 0;
     else counter_q <= counter_d;
 
-    $display("I_FETCH(%d) fetch=%d n_c=%d c=%d VSHF=%d%d%d%d", rst_async_i, fetch_address_o,
-             counter_d, counter_q, valid_i, stalled_i, held_q, valid_i);
+    $display("I_FETCH(%d) fetch=%d n_c=%d VSHF=%d%d%d%d", rst_async_i, fetch_address_o, counter_d,
+             valid_i, stalled_i, held_q, fetch_en_o);
   end
 
 endmodule

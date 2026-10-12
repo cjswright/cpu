@@ -69,22 +69,28 @@ module testbench;
     end
   end  // initial begin
 
-  always_ff @(posedge clk) begin
-    if (mem_read_en) begin
-      mem_read_value <= mem[mem_address[15:0]];
-      mem_read_is_valid <= '1;
-    end else begin
-      mem_read_is_valid <= '0;
+  always_ff @(posedge clk or posedge rst_async) begin
+    if (rst_async) mem_read_is_valid <= '0;
+    else begin
+      if (mem_read_en) begin
+        mem_read_value <= mem[mem_address[15:0]];
+        mem_read_is_valid <= '1;
+      end else begin
+        mem_read_is_valid <= '0;
+      end
     end
   end
 
-  always_ff @(posedge clk) begin
-    if (ifetch_req_en) begin
-      ifetch_address <= ifetch_req_address;
-      ifetch_data <= mem[ifetch_req_address[15:0]];
-      ifetch_is_valid <= '1;
-    end else begin
-      ifetch_is_valid <= '0;
+  always_ff @(posedge clk or posedge rst_async) begin
+    if (rst_async) ifetch_is_valid <= '0;
+    else begin
+      if (ifetch_req_en) begin
+        ifetch_address <= ifetch_req_address;
+        ifetch_data <= mem[ifetch_req_address[15:0]];
+        ifetch_is_valid <= '1;
+      end else begin
+        ifetch_is_valid <= '0;
+      end
     end
   end
 
