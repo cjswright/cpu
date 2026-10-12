@@ -31,7 +31,7 @@ module writeback (
   logic disabled, op_req_writeback;
 
   assign disabled = (rst_async_i || !details_i.is_valid);
-  assign op_req_writeback = details_i.op != `OPC_STORE;
+  assign op_req_writeback = details_i.modifies_reg_rd;
   let write_pc = details_i.op
     inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR, `OPC_BEQZ, `OPC_BNEZ};
 
