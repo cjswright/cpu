@@ -36,7 +36,6 @@ module alu (
   assign read_b_index_o = details_i.rt;
 
   logic is_u = details_i.func[0];
-  logic is_imm = details_i.op[0];
 
   logic [31:0] opa;
   logic [31:0] opb;
@@ -69,50 +68,115 @@ module alu (
     if (details_i.rs_hazard == types::ALU_REG_PREV) opa = result_q;
     else opa = read_a_i;
 
-    if (is_imm) opb = imm_value;
+    if (details_i.is_alu_imm) opb = imm_value;
     else if (details_i.rt_hazard == types::ALU_REG_PREV) opb = result_q;
     else opb = read_b_i;
   end
 
+  logic [31:0] offs_out;
+  assign offs_out = opa + {11'b0, details_i.offs};
+
+  /* For set operations, alu_func gets overridden to subtract */
+  logic [3:0] alu_func;
+  assign alu_func = details_i.is_alu_set ? `FUNC_SUB : details_i.func;
+
+  logic [32:0] alu_out, alu_opa, alu_opb;
+  logic alu_err;
+  assign alu_opa = {1'b0, opa};
+  assign alu_opb = {1'b0, opb};
+  always_comb begin
+    alu_out = 0;
+    alu_err = 0;
+    casez (alu_func)
+      `FUNC_ADD: alu_out = alu_opa + alu_opb;
+      `FUNC_SUB: alu_out = alu_opa - alu_opb;
+
+      /* Not unsigned/signed */
+      `FUNC_SLL: alu_out = alu_opa << alu_opb;
+      `FUNC_AND: alu_out = alu_opa & alu_opb;
+      `FUNC_SRL: alu_out = alu_opa >> alu_opb;
+      `FUNC_OR:  alu_out = alu_opa | alu_opb;
+      `FUNC_SRA: alu_out = alu_opa >>> alu_opb;
+      `FUNC_XOR: alu_out = alu_opa ^ alu_opb;
+      default:   alu_err = 1;
+    endcase
+  end
+
+  logic z, n, c;
+
+  logic set_out;
+  logic set_err;
+  always_comb begin
+    z = alu_out == 0;
+    n = alu_out[31];
+    c = alu_out[32];
+    /* Probably only going to work with signed numbers; needs more test */
+    case (details_i.func[3:1])
+      `FUNC_SET_LT: set_out = is_u ? c : n;
+      `FUNC_SET_GT: set_out = (is_u ? !c : !n) & !z;
+      `FUNC_SET_LTE: set_out = (is_u ? c : n) | z;
+      `FUNC_SET_GTE: set_out = (is_u ? !c : !n);
+      `FUNC_SET_EQ: set_out = z;
+      `FUNC_SET_NEQ: set_out = !z;
+      default: set_err = 1;
+    endcase
+  end
+
   always_comb begin
     details_d = details_i;
-
-    if (details_i.op inside {`OPC_ARITH, `OPC_AR_IM}) begin
-      // For reference, but it only matters for mult and divide
-      //logic is_unsigned = details_i.func[0];
-      casez (details_i.func)
-        `FUNC_ADD: result_d = opa + opb;
-        `FUNC_SUB: result_d = opa - opb;
-
-        /* Not unsigned/signed */
-        `FUNC_SLL: result_d = opa << opb;
-        `FUNC_AND: result_d = opa & opb;
-        `FUNC_SRL: result_d = opa >> opb;
-        `FUNC_OR:  result_d = opa | opb;
-        `FUNC_SRA: result_d = opa >>> opb;
-        `FUNC_XOR: result_d = opa ^ opb;
-        default:   details_d.is_valid = 0;
-      endcase
-    end else if (details_i.op inside {`OPC_TEST, `OPC_TS_IM}) begin
-      casez (details_i.func)
-        default: details_d.is_valid = 0;
-      endcase
-    end else if (details_i.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP}) begin
-      result_d = opa + {11'b0, details_i.offs};
+    if (details_i.is_alu_set) begin
+      result_d = {31'b0, set_out};
+      details_d.is_valid = !set_err;
+    end else if (details_i.is_alu_offs) begin
+      result_d = offs_out;
+    end else begin
+      result_d = alu_out[31:0];
+      details_d.is_valid = !alu_err;
     end
   end
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin
-    $display("ALU    (%08x) v=%d result=%x o=%x f=%x i=%x ofs=%x rs=%x rt=%x",
-             details_i.instruction, details_i.is_valid, result_d, details_i.op, details_i.func,
-             imm_value, details_i.offs, details_i.rs, details_i.rt);
-    $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a_i, read_b_i, opa, opb);
-    $display("ALU    rsh=%d rth=%d", details_i.rs_hazard, details_i.rt_hazard);
-    $display("ALU    VCJ=%d%d%d", details_i.is_valid, details_i.is_conditional_branch,
-             branch_cond_met);
+    if (!details_i.is_valid) begin
+      $display("ALU    STALL");
+    end else begin
+      if (details_i.rs_hazard != types::ALU_REG_NORMAL ||
+          details_i.rt_hazard != types::ALU_REG_NORMAL)
+        $display("ALU    HAZARD rsh=%d rth=%d", details_i.rs_hazard, details_i.rt_hazard);
 
-    $display("ALU    MISWNA=%d%d%d%d%d%d", branch_cond_met, details_i.is_conditional_branch,
-             branch_should_take, predicted_and_wrong, not_predicted_and_taken, branch_active_o);
+      if (details_i.is_alu) begin
+        $display("ALU    (%08x) result=%x o=%x f=%x i=%x ofs=%x rs=%x rt=%x",
+                 details_i.instruction, result_d, details_i.op, details_i.func, imm_value,
+                 details_i.offs, details_i.rs, details_i.rt);
+        $display("ALU    read_a=%x read_b=%x opa=%x opb=%x", read_a_i, read_b_i, opa, opb);
+      end
+
+      if (details_i.is_alu_offs) $display("ALU    OFFS v=%x", offs_out);
+
+      if (details_i.is_conditional_branch)
+        $display(
+          "ALU    BRANCH MSWNA=%d%d%d%d%d",
+          branch_cond_met,
+          branch_should_take,
+          predicted_and_wrong,
+          not_predicted_and_taken,
+          branch_active_o
+        );
+
+      if (details_i.is_alu_set)
+        $display(
+          "ALU    SET %x %x u=%d f=%s v=%x IZCN=%d%d%d%d o=%d",
+          alu_opa,
+          alu_opb,
+          is_u,
+          set_funcs[details_i.func[3:1]],
+          alu_out,
+          details_i.is_alu_imm,
+          z,
+          c,
+          n,
+          set_out
+        );
+    end
 
     details_q <= details_d;
     result_q  <= result_d;

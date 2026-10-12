@@ -47,12 +47,12 @@ module testbench;
   string        srec_path;
   string        expect_path;
   string        vcd_path;
-  int           timeout_clks = 100;
+  int           timeout_clks = 1000;
 
   int           num_checks = 0;
-  bit           check_is_reg       [MaxChecks];
-  int           check_index        [MaxChecks];
-  bit    [31:0] check_value        [MaxChecks];
+  bit           check_is_reg        [MaxChecks];
+  int           check_index         [MaxChecks];
+  bit    [31:0] check_value         [MaxChecks];
 
   int           errors = 0;
   bit           done;

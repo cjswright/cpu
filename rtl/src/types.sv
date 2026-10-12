@@ -36,6 +36,10 @@ package types;
     logic is_jump_link;
     logic is_jump_register;
 
+    logic is_alu_imm;
+    logic is_alu_set;
+    logic is_alu_offs;
+
     logic [19:0] branch_target;
 
     logic [3:0]  op;
@@ -89,5 +93,14 @@ endpackage
 `define FUNC_SRA 'b1110
 `define FUNC_XOR 'b1111
 
+/* Upper 3 bits of func, low bit indicates unsigned */
+`define FUNC_SET_LT 'b000
+`define FUNC_SET_GT 'b001
+`define FUNC_SET_LTE 'b010
+`define FUNC_SET_GTE 'b011
+`define FUNC_SET_EQ 'b100
+`define FUNC_SET_NEQ 'b101
+
+string set_funcs[] = '{"lt", "gt", "lte", "gte", "eq", "ne", "", ""};
 
 `endif
