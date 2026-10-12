@@ -19,14 +19,14 @@ module writeback (
 );
 
   /* All of the outputs of this module are fed into the register bank
-    * which itself will enact the write on the next positive clock edge,
-    * so this is all combinational.
-    *
-    * The FF block is basically just to document what's going on, but the
-    * state changes are actually happening in the register bank.
-    *
-    * It's kinda weird, but it works!
-    */
+   * which itself will enact the write on the next positive clock edge,
+   * so this is all combinational.
+   *
+   * The FF block is basically just to document what's going on, but the
+   * state changes are actually happening in the register bank.
+   *
+   * It's kinda weird, but it works!
+   */
 
   logic disabled, op_req_writeback;
 
@@ -34,7 +34,6 @@ module writeback (
   assign op_req_writeback = details_i.op != `OPC_STORE;
   let write_pc = details_i.op
     inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR, `OPC_BEQZ, `OPC_BNEZ};
-  let is_conditional = details_i.op inside {`OPC_BEQZ, `OPC_BNEZ};
 
   assign write_index_o = details_i.rd;
   assign write_en_o = !disabled && op_req_writeback && !write_pc;

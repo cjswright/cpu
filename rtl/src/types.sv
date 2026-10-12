@@ -36,6 +36,7 @@ package types;
     logic is_jump_link;
     logic is_jump_register;
 
+    logic is_alu_lhi;
     logic is_alu_imm;
     logic is_alu_set;
     logic is_alu_offs;
@@ -100,6 +101,9 @@ endpackage
 `define FUNC_SET_GTE 'b011
 `define FUNC_SET_EQ 'b100
 `define FUNC_SET_NEQ 'b101
+
+/* LHI piggy-backs as a function on OPC_TS_IM :( */
+`define FUNC_LHI 'b1110
 
 string set_funcs[] = '{"lt", "gt", "lte", "gte", "eq", "ne", "", ""};
 

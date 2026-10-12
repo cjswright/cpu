@@ -124,7 +124,9 @@ module alu (
 
   always_comb begin
     details_d = details_i;
-    if (details_i.is_alu_set) begin
+    if (details_i.is_alu_lhi) begin
+      result_d = {details_i.imm, 16'b0};
+    end else if (details_i.is_alu_set) begin
       result_d = {31'b0, set_out};
       details_d.is_valid = !set_err;
     end else if (details_i.is_alu_offs) begin

@@ -51,9 +51,10 @@ module decoder (
 
     decoded.is_valid = flush_i ? 0 : valid_i;
 
+    decoded.is_alu_lhi = decoded.op == `OPC_TS_IM && decoded.func == `FUNC_LHI;
     decoded.is_alu = decoded.op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM};
     decoded.is_alu_imm = decoded.op inside {`OPC_AR_IM, `OPC_TS_IM};
-    decoded.is_alu_set = decoded.op inside {`OPC_TEST, `OPC_TS_IM};
+    decoded.is_alu_set = decoded.op inside {`OPC_TEST, `OPC_TS_IM} && !decoded.is_alu_lhi;
     decoded.is_alu_offs = decoded.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP};
 
     decoded.is_mem_store = decoded.op == `OPC_STORE;
