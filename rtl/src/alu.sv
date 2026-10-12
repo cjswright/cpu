@@ -71,10 +71,12 @@ module alu (
 
   always_comb begin
     if (details_i.rs_hazard == types::ALU_REG_PREV) opa = result_q;
+    else if (details_i.is_jump_link) opa = {12'b0, details_i.address};
     else opa = read_a_i;
 
     if (details_i.is_alu_imm) opb = imm_value;
     else if (details_i.rt_hazard == types::ALU_REG_PREV) opb = result_q;
+    else if (details_i.is_jump_link) opb = 1;
     else opb = read_b_i;
   end
 
@@ -150,7 +152,7 @@ module alu (
           details_i.rt_hazard != types::ALU_REG_NORMAL)
         $display("ALU    HAZARD rsh=%d rth=%d", details_i.rs_hazard, details_i.rt_hazard);
 
-      if (details_i.is_alu) begin
+      if (details_i.is_alu || details_i.is_jump_link) begin
         $display("ALU    (%08x) result=%x o=%x f=%x i=%x ofs=%x rs=%x rt=%x",
                  details_i.instruction, result_d, details_i.op, details_i.func, imm_value,
                  details_i.offs, details_i.rs, details_i.rt);

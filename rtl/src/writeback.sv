@@ -32,16 +32,14 @@ module writeback (
 
   assign disabled = (rst_async_i || !details_i.is_valid);
   assign op_req_writeback = details_i.modifies_reg_rd;
-  let write_pc = details_i.op
-    inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR, `OPC_BEQZ, `OPC_BNEZ};
 
   assign write_index_o = details_i.rd;
-  assign write_en_o = !disabled && op_req_writeback && !write_pc;
+  assign write_en_o = !disabled && op_req_writeback;
   assign write_o = data_i;
 
   always_ff @(posedge clk_i or posedge rst_async_i) begin
-    $display("WRITEBK(%08x) v=%d data=%x op=%x rd=%x offs=%x", details_i.instruction,
-             details_i.is_valid, data_i, details_i.op, details_i.rd, details_i.offs);
+    $display("WRITEBK(%08x) v=%d data=%x write_en=%x rd=%x", details_i.instruction,
+             details_i.is_valid, data_i, write_en_o, details_i.rd);
   end
 
 endmodule
