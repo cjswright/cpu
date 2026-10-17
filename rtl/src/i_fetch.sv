@@ -26,10 +26,14 @@ module i_fetch (
   output reg  [31:0] instruction_o,
   output      [19:0] address_o,
 
+  // Branch predictor request and response - combinational
   output        branch_predict_req_o,
   output [19:0] branch_predict_req_addr_o,
   input         branch_predict_rsp_ok_i,
   input  [19:0] branch_predict_rsp_addr_i,
+
+  // If branch_predicted_o, predict that address_o has previously jumped to
+  // branch_dest_o
   output        branch_predicted_o,
   output [19:0] branch_dest_o
 );
