@@ -15,10 +15,21 @@ pipeline.
 ## ALU
 
 ALU will move more to a model of having two 32-bit inputs, calculating
-some math and providing a 32-bit output plus flags. Decisions around
-what to do such as around branching, immediate versus registers, rs/rt
-hazards, and special casees for jump-and-link will be taken out of the
-alu path and move to the decoder, control, and hazard manager.
+some math and providing a 32-bit output. Decisions around what to do
+such as around branching, immediate versus registers, rs/rt hazards, and
+special cases for jump-and-link will be taken out of the alu path and
+move to the decoder, control, and hazard manager.
+
+Very simple control paths will still be provided where it gives
+significant impact on ALU behaviour, for example, there's a rather large
+branch which decides between doing an ALU operation for doing a SET
+operation.
+
+## Control
+
+The wramp module will need to take up a little more responsibility
+around coordinating between the different modules. To date, it's simply
+taken data from each stage and pushed it to the next.
 
 ## Hazard manager
 
