@@ -18,7 +18,7 @@ package types;
     ALU_REG_PREV
   } alu_reg_hazard_e;
 
-  typedef struct {
+  typedef struct packed {
     logic [19:0] address;
     logic [31:0] instruction;
 

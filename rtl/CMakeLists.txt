@@ -16,8 +16,7 @@ list(APPEND rtl_sources
   src/testbench.sv
   src/testlib.sv
   src/types.sv
-  src/wramp.sv
-  src/writeback.sv)
+  src/wramp.sv)
 
 verilate(verilate
   VERILATOR_ARGS -Wall --sv --timing --main -Wno-lint --assert

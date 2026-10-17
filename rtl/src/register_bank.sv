@@ -39,6 +39,9 @@ module register_bank (
     $display("REGS r1=%x r2=%x r3=%x r4=%x r5=%x r15=%x", registers[1], registers[2], registers[3],
              registers[4], registers[5], registers[15]);
     if (rst_async_i) for (int i = 0; i < $size(registers); i++) registers[i] <= 0;
-    else if (write_en_i && write_index_i != 0) registers[write_index_i] <= write_i;
+    else if (write_en_i && write_index_i != 0) begin
+      $display("REGS WRITE r%d=%x", write_index_i, write_i);
+      registers[write_index_i] <= write_i;
+    end
   end
 endmodule

@@ -39,7 +39,6 @@ module decoder (
     decoded.branch_dest = branch_dest_i;
 
     decoded.op = instruction_i[31:28];
-    decoded.rd = decoded.is_jump_link ? 4'd15 : instruction_i[27:24];
     decoded.rs = instruction_i[23:20];
     decoded.func = instruction_i[19:16];
     decoded.imm = instruction_i[15:0];
@@ -56,14 +55,16 @@ module decoder (
 
     decoded.is_mem_store = decoded.op == `OPC_STORE;
     decoded.is_mem_load = decoded.op == `OPC_LOAD;
-    decoded.is_mem = decoded.is_mem_load || decoded.is_mem_store;
-    decoded.modifies_reg_rd = decoded.is_mem_load || decoded.is_alu || decoded.is_jump_link;
     decoded.is_conditional_branch = decoded.op inside {`OPC_BEQZ, `OPC_BNEZ};
     decoded.conditional_req_state = decoded.op == `OPC_BNEZ;
     decoded.is_jump = decoded.op inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR};
     decoded.is_direct_jump = decoded.op inside {`OPC_JUMP, `OPC_JAL};
     decoded.is_jump_link = decoded.op inside {`OPC_JAL, `OPC_JALR};
     decoded.is_jump_register = decoded.op inside {`OPC_JR, `OPC_JALR};
+
+    decoded.is_mem = decoded.is_mem_load || decoded.is_mem_store;
+    decoded.modifies_reg_rd = decoded.is_mem_load || decoded.is_alu || decoded.is_jump_link;
+    decoded.rd = decoded.is_jump_link ? 4'd15 : instruction_i[27:24];
 
     decoded.branch_target = decoded.address + decoded.offs + 1;
 

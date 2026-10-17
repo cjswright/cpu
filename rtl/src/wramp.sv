@@ -174,9 +174,6 @@ module wramp (
     .details_o(alu_details)
   );
 
-  reg [31:0] mem_access_result;
-  types::instruction_details_t mem_access_details;
-
   mem_access _mem_access (
     .rst_async_i(rst_async_i),
     .clk_i(clk_i),
@@ -192,19 +189,9 @@ module wramp (
     .rd_i(read_c),
     .rd_index_o(read_c_index),
 
-    .details_o(mem_access_details),
-    .result_o (mem_access_result)
+    .wb_req_en_o  (write_en),
+    .wb_req_rd_o  (write_index),
+    .wb_req_data_o(write)
   );
-
-  writeback _writeback (
-    .rst_async_i(rst_async_i),
-    .clk_i(clk_i),
-    .details_i(mem_access_details),
-    .data_i(mem_access_result),
-    .write_en_o(write_en),
-    .write_o(write),
-    .write_index_o(write_index)
-  );
-
 
 endmodule
