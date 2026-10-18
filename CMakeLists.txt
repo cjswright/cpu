@@ -24,11 +24,11 @@ verilate(verilate
   SOURCES ${rtl_sources}
   TOP_MODULE testbench
   PREFIX wramp
-  TRACE)
+  TRACE_VCD)
 
 # Assemble tests/*.s into tests/*.srec. Needs the WRAMP toolchain; without it
 # the checked in .srec files are used as they are.
-set(WRAMP_TOOLCHAIN "${CMAKE_CURRENT_SOURCE_DIR}/../../wramp/toolchain"
+set(WRAMP_TOOLCHAIN "${CMAKE_CURRENT_SOURCE_DIR}/../wramp/toolchain"
     CACHE PATH "Directory holding the wasm and wlink binaries")
 find_program(WASM wasm HINTS ${WRAMP_TOOLCHAIN})
 find_program(WLINK wlink HINTS ${WRAMP_TOOLCHAIN})
