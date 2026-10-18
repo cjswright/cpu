@@ -48,19 +48,13 @@ package types;
     logic [3:0]  rd;
     logic [3:0]  rs;
     logic [3:0]  func;
-    logic [15:0] imm;
+    logic [31:0] imm;
     logic [19:0] offs;
     logic [3:0]  rt;
 
     /* Used to make bad instructions have no effect. Should probably fault. */
     logic is_valid;
 
-    /* Rest of this is for hazard avoidance */
-
-    /* Used to send the output of this instruction to the rs or rt parameter
-       * of the next instruction in the ALU */
-    alu_reg_hazard_e rs_hazard;
-    alu_reg_hazard_e rt_hazard;
   } instruction_details_t;
 endpackage
 
@@ -83,29 +77,31 @@ endpackage
 `define OPC_NOOP 'b1111
 
 /* Math has signed and unsigned variants with low bit. 1 indicates unsigned */
-`define FUNC_ADD 'b000?
-`define FUNC_SUB 'b001?
-`define FUNC_MUL 'b010?
-`define FUNC_DIV 'b011?
-`define FUNC_REM 'b100?
+`define FUNC_ADDS 4'b0000
+`define FUNC_ADDZ 4'b000z
+`define FUNC_SUBS 4'b0010
+`define FUNC_SUBZ 4'b001z
+`define FUNC_MULZ 4'b010z
+`define FUNC_DIVZ 4'b011z
+`define FUNC_REMZ 4'b100z
 
-`define FUNC_SLL 'b1010
-`define FUNC_AND 'b1011
-`define FUNC_SRL 'b1100
-`define FUNC_OR 'b1101
-`define FUNC_SRA 'b1110
-`define FUNC_XOR 'b1111
+`define FUNC_SLL 4'b1010
+`define FUNC_AND 4'b1011
+`define FUNC_SRL 4'b1100
+`define FUNC_OR 4'b1101
+`define FUNC_SRA 4'b1110
+`define FUNC_XOR 4'b1111
 
 /* Upper 3 bits of func, low bit indicates unsigned */
-`define FUNC_SET_LT 'b000
-`define FUNC_SET_GT 'b001
-`define FUNC_SET_LTE 'b010
-`define FUNC_SET_GTE 'b011
-`define FUNC_SET_EQ 'b100
-`define FUNC_SET_NEQ 'b101
+`define FUNC_SET_LT 3'b000
+`define FUNC_SET_GT 3'b001
+`define FUNC_SET_LTE 3'b010
+`define FUNC_SET_GTE 3'b011
+`define FUNC_SET_EQ 3'b100
+`define FUNC_SET_NEQ 3'b101
 
 /* LHI piggy-backs as a function on OPC_TS_IM :( */
-`define FUNC_LHI 'b1110
+`define FUNC_LHI 4'b1110
 
 string set_funcs[] = '{"lt", "gt", "lte", "gte", "eq", "ne", "", ""};
 

@@ -65,8 +65,6 @@ module wramp (
     .debug_o(debug_reg_o)
   );
 
-  types::instruction_details_t alu_details;
-
   logic ifetch_valid;
   logic ifetch_stalled;
 
@@ -153,32 +151,35 @@ module wramp (
     .stall_o  (decoder_req_skip)
   );
 
-  logic [31:0] alu_out;
+  logic [31:0] alu_opa;
+  logic [31:0] alu_opb;
+  logic [31:0] alu_result;
+  logic alu_fault;
+
+  logic [31:0] alu_result_q;
+  types::instruction_details_t alu_details_q;
+  types::instruction_details_t alu_details_d;
 
   alu _alu (
     .rst_async_i(rst_async_i),
     .clk_i(clk_i),
 
     .details_i(details),
+    .opa_i(alu_opa),
+    .opb_i(alu_opb),
 
-    .read_a_index_o(read_a_index),
-    .read_b_index_o(read_b_index),
-    .read_a_i(read_a),
-    .read_b_i(read_b),
+    .is_set_i(details.is_alu_set),
+    .func_i  (details.func),
 
-    .branch_active_o(alu_branch_en),
-    .branch_address_o(alu_branch_address),
-    .branch_destination_o(alu_branch_destination),
-
-    .result_o (alu_out),
-    .details_o(alu_details)
+    .result_o(alu_result),
+    .fault_o (alu_fault)
   );
 
   mem_access _mem_access (
     .rst_async_i(rst_async_i),
     .clk_i(clk_i),
-    .details_i(alu_details),
-    .data_i(alu_out),
+    .details_i(alu_details_q),
+    .data_i(alu_result_q),
 
     .mem_read_value_i(mem_fetch_value_i),
     .mem_write_value_o(mem_write_value_o),
@@ -193,5 +194,69 @@ module wramp (
     .wb_req_rd_o  (write_index),
     .wb_req_data_o(write)
   );
+
+  /* Register lookup, hazards, and alu_opa/opb should be in decoder */
+
+  assign read_a_index = details.rs;
+  assign read_b_index = details.rt;
+
+  always_comb begin
+    if (details.is_alu_lhi) alu_opa = 0;
+    else if (details.is_jump_link) alu_opa = {12'b0, details.address};
+    else if (alu_details_q.is_valid && alu_details_q.is_alu && alu_details_q.rd == details.rs)
+      alu_opa = alu_result_q;
+    else alu_opa = read_a;
+
+    if (details.is_alu_imm) alu_opb = details.imm;
+    else if (alu_details_q.is_valid && alu_details_q.is_alu && alu_details_q.rd == details.rt)
+      alu_opb = alu_result_q;
+    else alu_opb = read_b;
+  end
+
+  /* If ALU just processed a branch instruction, and we mispredicted, we have to
+   * flush the pipeline and redirect it. */
+
+  logic branch_should_take, predicted_and_wrong, not_predicted_and_taken;
+  logic [19:0] next_i_not_taken;
+
+  assign branch_should_take = details.is_conditional_branch && alu_result[0] == 1;
+  assign next_i_not_taken = details.address + 1;
+
+  assign alu_branch_destination =
+           details.is_jump_register ? alu_result[19:0] :
+           branch_should_take ? details.branch_target
+             : next_i_not_taken;
+  assign alu_branch_address = details.address;
+
+  assign predicted_and_wrong = details.branch_predicted
+             && alu_branch_destination != details.branch_dest;
+  assign not_predicted_and_taken = !details.branch_predicted && branch_should_take;
+  assign alu_branch_en = details.is_valid && (predicted_and_wrong ||
+                                              not_predicted_and_taken ||
+                                              details.is_jump_register);
+
+  always_comb begin
+    alu_details_d = details;
+    alu_details_d.is_valid = !alu_fault;
+  end
+
+  always_ff @(posedge clk_i or posedge rst_async_i) begin
+    if (details.is_conditional_branch)
+      $display(
+        "ALU    BRANCH SWNA=%d%d%d%d",
+        branch_should_take,
+        predicted_and_wrong,
+        not_predicted_and_taken,
+        alu_branch_en
+      );
+
+    $display(" PP %d %d %x %x %x", alu_fault, details.is_jump_link, alu_opa, alu_result,
+             alu_result_q);
+
+    if (!alu_fault) begin
+      alu_details_q <= alu_details_d;
+      alu_result_q  <= alu_result;
+    end
+  end
 
 endmodule

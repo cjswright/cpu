@@ -72,6 +72,7 @@ module i_fetch (
 
     $display("I_FETCH(%d) fetch=%d n_c=%d VSHF=%d%d%d%d", rst_async_i, fetch_address_o, counter_d,
              valid_i, stalled_i, held_q, fetch_en_o);
+    $display("I_FETCH alu_branch_en_i=%d decode_jump_en_i=%d", alu_branch_en_i, decoder_jump_en_i);
   end
 
 endmodule

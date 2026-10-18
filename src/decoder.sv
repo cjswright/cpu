@@ -31,6 +31,17 @@ module decoder (
   types::instruction_details_t details_q;
 
   assign details_o = details_q;
+  logic [15:0] imm;
+  assign imm = instruction_i[15:0];
+
+  logic [3:0] func, op;
+  assign func = instruction_i[19:16];
+  assign op   = instruction_i[31:28];
+
+  logic [19:0] offs;
+  assign offs = instruction_i[19:0];
+
+  logic is_lhi, is_conditional_branch, is_mem_load, is_mem_store, is_alu, is_jump_link, is_offs;
 
   always_comb begin
     decoded.instruction = instruction_i;
@@ -38,45 +49,56 @@ module decoder (
     decoded.branch_predicted = branch_predicted_i;
     decoded.branch_dest = branch_dest_i;
 
-    decoded.op = instruction_i[31:28];
+    decoded.op = op;
     decoded.rs = instruction_i[23:20];
-    decoded.func = instruction_i[19:16];
-    decoded.imm = instruction_i[15:0];
-    decoded.offs = instruction_i[19:0];
+    decoded.offs = offs;
     decoded.rt = instruction_i[3:0];
 
     decoded.is_valid = flush_i ? 0 : valid_i;
 
-    decoded.is_alu_lhi = decoded.op == `OPC_TS_IM && decoded.func == `FUNC_LHI;
-    decoded.is_alu = decoded.op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM, `OPC_LA};
-    decoded.is_alu_imm = decoded.op inside {`OPC_AR_IM, `OPC_TS_IM};
-    decoded.is_alu_set = decoded.op inside {`OPC_TEST, `OPC_TS_IM} && !decoded.is_alu_lhi;
-    decoded.is_alu_offs = decoded.op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP, `OPC_LA};
+    is_lhi = op == `OPC_TS_IM && func == `FUNC_LHI;
+    is_alu = op inside {`OPC_ARITH, `OPC_AR_IM, `OPC_TEST, `OPC_TS_IM, `OPC_LA};
+    is_offs = op inside {`OPC_LOAD, `OPC_STORE, `OPC_JUMP, `OPC_LA};
 
-    decoded.is_mem_store = decoded.op == `OPC_STORE;
-    decoded.is_mem_load = decoded.op == `OPC_LOAD;
-    decoded.is_conditional_branch = decoded.op inside {`OPC_BEQZ, `OPC_BNEZ};
-    decoded.conditional_req_state = decoded.op == `OPC_BNEZ;
-    decoded.is_jump = decoded.op inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR};
-    decoded.is_direct_jump = decoded.op inside {`OPC_JUMP, `OPC_JAL};
-    decoded.is_jump_link = decoded.op inside {`OPC_JAL, `OPC_JALR};
-    decoded.is_jump_register = decoded.op inside {`OPC_JR, `OPC_JALR};
+    is_mem_store = op == `OPC_STORE;
+    is_mem_load = op == `OPC_LOAD;
+    is_conditional_branch = op inside {`OPC_BEQZ, `OPC_BNEZ};
+    is_jump_link = op inside {`OPC_JAL, `OPC_JALR};
 
-    decoded.is_mem = decoded.is_mem_load || decoded.is_mem_store;
-    decoded.modifies_reg_rd = decoded.is_mem_load || decoded.is_alu || decoded.is_jump_link;
-    decoded.rd = decoded.is_jump_link ? 4'd15 : instruction_i[27:24];
+    decoded.is_alu_lhi = is_lhi;
+    decoded.is_alu = is_alu;
+    decoded.is_alu_offs = is_offs;
 
-    decoded.branch_target = decoded.address + decoded.offs + 1;
+    decoded.is_mem_store = is_mem_store;
+    decoded.is_mem_load = is_mem_load;
+    decoded.is_conditional_branch = is_conditional_branch;
+    decoded.conditional_req_state = op == `OPC_BNEZ;
+    decoded.is_jump = op inside {`OPC_JUMP, `OPC_JR, `OPC_JAL, `OPC_JALR};
+    decoded.is_direct_jump = op inside {`OPC_JUMP, `OPC_JAL};
+    decoded.is_jump_link = is_jump_link;
+    decoded.is_jump_register = op inside {`OPC_JR, `OPC_JALR};
 
-    if (details_q.is_valid
-      && details_q.modifies_reg_rd && details_q.rd != 0 && decoded.rs == details_q.rd)
-      decoded.rs_hazard = types::ALU_REG_PREV;
-    else decoded.rs_hazard = types::ALU_REG_NORMAL;
+    decoded.is_alu_set = (op inside {`OPC_TEST, `OPC_TS_IM} && !is_lhi) || is_conditional_branch;
+    decoded.is_mem = is_mem_load || is_mem_store;
+    decoded.modifies_reg_rd = is_mem_load || is_alu || is_jump_link;
+    decoded.rd = is_jump_link ? 4'd15 : instruction_i[27:24];
 
-    if (details_q.is_valid
-      && details_q.modifies_reg_rd && details_q.rd != 0 && decoded.rt == details_q.rd)
-      decoded.rt_hazard = types::ALU_REG_PREV;
-    else decoded.rt_hazard = types::ALU_REG_NORMAL;
+    decoded.is_alu_imm = op inside {`OPC_AR_IM, `OPC_TS_IM}
+      || is_conditional_branch || is_lhi || is_jump_link || is_offs;
+
+    decoded.imm = is_conditional_branch ? 0 :
+                  is_lhi ? { imm, 16'b0 } :
+                  is_jump_link ? 1 :
+                  is_offs ? { 12'b0, offs} :
+                  func[0] ? { 16'b0, imm } :
+                  {{16{imm[15]}}, imm};
+
+    decoded.func = is_lhi | is_offs ? `FUNC_ADDS :
+                   op == `OPC_BEQZ ? {`FUNC_SET_EQ, 1'b0} :
+                   op == `OPC_BNEZ ? {`FUNC_SET_NEQ, 1'b0} :
+                   func;
+
+    decoded.branch_target = address_i + offs + 1;
   end  // always_comb
 
   always_comb begin
@@ -124,10 +146,12 @@ module decoder (
     if (details_d.is_valid && !rst_async_i && details_d.op != `OPC_NOOP)
       valid_instr_count_q <= valid_instr_count_q + 1;
 
-    $display("DECODER(%08x) a=%x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d %d, %d",
+    $display("DECODER(%08x) a=%x v=%d op=%x rd=%x rs=%x f=%x imm=%x offs=%x rt=%x %d",
              instruction_i, address_i, details_d.is_valid, details_d.op, details_d.rd,
-             details_d.rs, details_d.func, details_d.imm, details_d.offs, details_d.rt,
-             details_d.rs_hazard, details_d.rt_hazard, stall_o);
+             details_d.rs, details_d.func, details_d.imm, details_d.offs, details_d.rt, stall_o);
+
+    if (jump_active_o)
+      $display("DECODER(%08x) JUMP offs=%x dest=%x", instruction_i, offs, jump_destination_o);
 
     $display("HAZARD stall_o=%d", stall_o);
   end
