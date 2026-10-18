@@ -35,8 +35,6 @@ module alu (
   assign read_a_index_o = details_i.rs;
   assign read_b_index_o = details_i.rt;
 
-  logic is_u = details_i.func[0];
-
   logic [31:0] opa;
   logic [31:0] opb;
 
@@ -82,6 +80,8 @@ module alu (
 
   logic [31:0] offs_out;
   assign offs_out = opa + {11'b0, details_i.offs};
+  logic is_u;
+  assign is_u = details_i.func[0];
 
   /* For set operations, alu_func gets overridden to subtract */
   logic [3:0] alu_func;
